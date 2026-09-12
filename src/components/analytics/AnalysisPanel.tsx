@@ -16,6 +16,13 @@ import {
     PolarRadiusAxis,
     Radar,
 } from 'recharts';
+import {RegionSlot} from "@/app/page";
+
+interface AnalysisPanelProps {
+    slots: RegionSlot[];
+    activeSlot: RegionSlot;
+    onSelectSlot: (slot: RegionSlot) => void;
+}
 
 // 시세 추이 데이터 (억 원 단위)
 const priceTrendData = [
@@ -35,7 +42,7 @@ const environmentRadarData = [
     { category: '편의 시설', regionA: 92, regionB: 70, regionC: 75 },
 ];
 
-export default function AnalysisPanel() {
+export default function AnalysisPanel({ slots, activeSlot, onSelectSlot }: AnalysisPanelProps) {
     const [activeTab, setActiveTab] = useState<'A' | 'B' | 'C'>('A');
 
     return (
@@ -47,36 +54,21 @@ export default function AnalysisPanel() {
                     <span className="text-[11px] font-medium text-slate-400">단위: 억 원 / 점</span>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
-                    <button
-                        onClick={() => setActiveTab('A')}
-                        className={`p-2.5 rounded-xl text-xs font-bold transition-all border ${
-                            activeTab === 'A'
-                                ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-200'
-                                : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
-                        }`}
-                    >
-                        A 강남구 역삼동
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('B')}
-                        className={`p-2.5 rounded-xl text-xs font-bold transition-all border ${
-                            activeTab === 'B'
-                                ? 'bg-purple-600 text-white border-purple-600 shadow-md shadow-purple-200'
-                                : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
-                        }`}
-                    >
-                        B 서초구 서초동
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('C')}
-                        className={`p-2.5 rounded-xl text-xs font-bold transition-all border ${
-                            activeTab === 'C'
-                                ? 'bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-200'
-                                : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
-                        }`}
-                    >
-                        C 송파구 잠실동
-                    </button>
+                    {
+                        slots.map((slot) => (
+                            <button
+                                key={slot.id}
+                                onClick={() => onSelectSlot(slot)}
+                                className={`p-2.5 rounded-xl text-xs font-bold transition-all border ${
+                                    activeSlot.id === slot.id
+                                        ? 'bg-slate-900 text-white border-slate-900 shadow-md'
+                                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
+                                }`}
+                            >
+                                {slot.id} {slot.name}
+                            </button>
+                        ))
+                    }
                 </div>
             </div>
 

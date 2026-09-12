@@ -14,6 +14,7 @@ import { fromLonLat, toLonLat } from 'ol/proj';
 import { Style, Circle as CircleStyle, Fill, Stroke, Text } from 'ol/style';
 import { supabase } from '@/lib/supabase';
 import { Building2, Trees, Landmark, School, Hospital, Train, Store } from 'lucide-react';
+import {RegionSlot} from "@/app/page";
 
 interface LayerToggle {
     id: string;
@@ -23,7 +24,14 @@ interface LayerToggle {
     color: string;
 }
 
-export default function VWorldMap() {
+// Props 인터페이스 추가
+interface VWorldMapProps {
+    activeSlot: RegionSlot;
+    slots: RegionSlot[];
+    onSelectSlot: (slot: RegionSlot) => void;
+}
+
+export default function VWorldMap({ activeSlot, slots, onSelectSlot }: VWorldMapProps) {
     const mapRef = useRef<HTMLDivElement>(null);
     const mapInstanceRef = useRef<Map | null>(null);
     const vectorSourceRef = useRef<VectorSource>(new VectorSource());
@@ -177,6 +185,19 @@ export default function VWorldMap() {
         });
     }, [facilities, layers]);
 
+    // activeSlot 변경 시 지도를 해당 좌표로 부드럽게 이동 (Fly-To)
+    useEffect(() => {
+        const map = mapInstanceRef.current;
+        if (!map || !activeSlot) return;
+
+        const view = map.getView();
+        view.animate({
+            center: fromLonLat([activeSlot.lng, activeSlot.lat]),
+            duration: 800, // 0.8초 이동 애니메이션
+            zoom: 14,
+        });
+    }, [activeSlot]);
+
     const toggleLayer = (id: string) => {
         setLayers((prev) =>
             prev.map((layer) => (layer.id === id ? { ...layer, enabled: !layer.enabled } : layer))
@@ -192,10 +213,23 @@ export default function VWorldMap() {
             <div className="absolute top-4 left-4 z-10 flex items-center gap-2 bg-white/90 backdrop-blur-md p-2 rounded-xl shadow-lg border border-slate-200">
                 <span className="text-xs font-bold text-slate-500 px-2">지역 선택</span>
                 <div className="flex gap-1.5">
-          <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-600 text-white rounded-lg text-xs font-semibold shadow-sm">
-            <span className="w-4 h-4 rounded-full bg-white text-blue-600 flex items-center justify-center text-[10px]">A</span>
-            가평 참전비공원
-          </span>
+                    {slots.map((slot) => (
+                        <button
+                            key={slot.id}
+                            onClick={() => onSelectSlot(slot)}
+                            className={`inline-flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-semibold shadow-sm transition-all ${
+                                activeSlot.id === slot.id ? 'ring-2 ring-offset-1 ring-slate-800 scale-105' : 'opacity-80'
+                            }`}
+                            style={{ backgroundColor: slot.color, color: '#ffffff' }}
+                        >
+                          <span
+                              className="w-4 h-4 rounded-full bg-white flex items-center justify-center text-[10px] font-bold"
+                              style={{color: slot.color}}>
+                            {slot.id}
+                          </span>
+                            {slot.name}
+                        </button>
+                    ))}
                 </div>
             </div>
 
