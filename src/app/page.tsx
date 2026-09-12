@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import { Search, Bell, User, Map as MapIcon, ListFilter, BarChart3, Building2, Trees, Landmark, School, Train, Store, Hospital } from 'lucide-react';
+import AnalysisPanel from "@/components/analytics/AnalysisPanel";
 
 const VWorldMap = dynamic(() => import('@/components/map/VWorldMap'), {
   ssr: false,
@@ -127,42 +128,8 @@ export default function Home() {
           </div>
 
           {/* [우측] 비교 분석 패널 (모바일 'compare' 탭에서 전체 화면 전면 노출) */}
-          <aside className={`bg-white border-l border-slate-200 p-4 flex-col gap-4 overflow-y-auto ${
-              mobileTab === 'compare' ? 'flex flex-1 w-full' : 'hidden md:flex md:w-[380px]'
-          } shrink-0`}>
-            <div className="flex items-center justify-between border-b pb-2">
-              <h2 className="font-bold text-slate-800 text-xs md:text-sm">비교 분석</h2>
-              <span className="text-[10px] text-slate-400">A/B/C 지역 지표 분석</span>
-            </div>
-
-            <div className="grid grid-cols-3 gap-2 text-center text-xs font-bold">
-              <div className="p-2 bg-blue-50 text-blue-700 rounded-xl border border-blue-200">A 강남구</div>
-              <div className="p-2 bg-purple-50 text-purple-700 rounded-xl border border-purple-200">B 서초구</div>
-              <div className="p-2 bg-emerald-50 text-emerald-700 rounded-xl border border-emerald-200">C 송파구</div>
-            </div>
-
-            <div className="p-3 bg-slate-50 rounded-xl border space-y-2">
-              <div className="text-xs font-bold text-slate-700">지역별 종합 점수</div>
-              <div className="flex justify-around text-xs font-bold">
-                <span className="text-blue-600">A 82점</span>
-                <span className="text-purple-600">B 76점</span>
-                <span className="text-emerald-600">C 68점</span>
-              </div>
-            </div>
-
-            <div className="p-3 bg-slate-50 rounded-xl border space-y-2">
-              <div className="text-xs font-bold text-slate-700">시세 변동 추이 (2020~2024)</div>
-              <div className="h-32 border border-dashed rounded-lg bg-white flex items-center justify-center text-xs text-slate-400">
-                Line Chart (Recharts)
-              </div>
-            </div>
-
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-900 space-y-1">
-              <div className="font-bold">주요 특징 비교</div>
-              <p className="text-[11px] text-blue-800 leading-relaxed">
-                강남구 역삼동은 교통 및 공공기관 접근성이 뛰어나며 평균 매매가가 높게 형성되어 있습니다.
-              </p>
-            </div>
+          <aside className="w-80 xl:w-96 h-full flex-shrink-0 hidden lg:block border-l border-slate-200">
+            <AnalysisPanel />
           </aside>
 
         </div>
