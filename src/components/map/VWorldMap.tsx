@@ -249,7 +249,7 @@ export default function VWorldMap({ activeSlot, slots, onSelectSlot, onFacilitie
 
     return (
         <div className="relative w-full h-full">
-            <div ref={mapRef} className="w-full h-full absolute inset-0 z-0" />
+            <div ref={mapRef} className="w-full h-full bg-slate-100 dark:bg-slate-900 transition-all duration-300 dark:invert-[0.95] dark:hue-rotate-10 dark:brightness-100" />
 
             {/* 1. 마커 클릭 팝업 오버레이 (다크모드 지원 반영) */}
             <div
