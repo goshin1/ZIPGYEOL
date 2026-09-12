@@ -12,7 +12,7 @@ import Point from 'ol/geom/Point';
 import XYZ from 'ol/source/XYZ';
 import Overlay from 'ol/Overlay';
 import { fromLonLat, toLonLat } from 'ol/proj';
-import { Style, Circle as CircleStyle, Fill, Stroke, Text } from 'ol/style';
+import {Style, Circle as CircleStyle, Fill, Stroke, Text, Icon} from 'ol/style';
 import { supabase } from '@/lib/supabase';
 import { Building2, Trees, Landmark, School, Hospital, Train, Store, X } from 'lucide-react';
 import { RegionSlot } from "@/app/page";
@@ -31,6 +31,30 @@ interface VWorldMapProps {
     onSelectSlot: (slot: RegionSlot) => void;
     onFacilitiesFetched: (data: any[]) => void;
 }
+
+// 카테고리별 SVG 아이콘 Path (Lucide 아이콘 규격)
+const ICON_SVG_PATHS: Record<string, string> = {
+    APT: '<path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18"/><path d="M6 12H4a2 2 0 0 0-2 2v8"/><path d="M18 9h2a2 2 0 0 1 2 2v11"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/>',
+    PARK: '<path d="M10 10v.2A3 3 0 0 1 8.9 16H5a3 3 0 0 1-1-5.8V10a3 3 0 0 1 6 0Z"/><path d="M7 16v6"/><path d="M13 19v3"/><path d="M12 19h2a3 3 0 0 0 1-5.8V13a3 3 0 0 0-6 0v.2A3 3 0 0 0 8.9 19H12Z"/>',
+    GOV: '<line x1="3" x2="21" y1="22" y2="22"/><line x1="6" x2="6" y1="18" y2="11"/><line x1="10" x2="10" y1="18" y2="11"/><line x1="14" x2="14" y1="18" y2="11"/><line x1="18" x2="18" y1="18" y2="11"/><polygon points="12 2 20 7 4 7 12 2"/>',
+    SCHOOL: '<path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>',
+    HOSPITAL: '<path d="M12 6v12M6 12h12"/><rect width="18" height="18" x="3" y="3" rx="2"/>',
+    SUBWAY: '<rect width="16" height="16" x="4" y="3" rx="2"/><path d="M4 11h16M12 3v8M8 19l-3 3M16 19l3 3M9 15h.01M15 15h.01"/>',
+    STORE: '<path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/>',
+};
+
+// 범례 색상 + 흰색 SVG 아이콘 마커 생성 함수
+const createCustomMarkerSvg = (color: string, type: string) => {
+    const svgPath = ICON_SVG_PATHS[type] || ICON_SVG_PATHS.APT;
+    const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10.5" fill="${color}" stroke="#ffffff" stroke-width="2"/>
+        <g transform="translate(4, 4) scale(0.66)" fill="none" stroke="#ffffff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+            ${svgPath}
+        </g>
+    </svg>`;
+    return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+};
 
 export default function VWorldMap({ activeSlot, slots, onSelectSlot, onFacilitiesFetched }: VWorldMapProps) {
     const mapRef = useRef<HTMLDivElement>(null);
@@ -187,19 +211,20 @@ export default function VWorldMap({ activeSlot, slots, onSelectSlot, onFacilitie
                 distance: item.distance_meters,
             });
 
+            // SVG 데이터 URI 기반 Icon 스타일 적용
             feature.setStyle(
                 new Style({
-                    image: new CircleStyle({
-                        radius: 8,
-                        fill: new Fill({ color: markerColor }),
-                        stroke: new Stroke({ color: '#ffffff', width: 2 }),
+                    image: new Icon({
+                        src: createCustomMarkerSvg(markerColor, item.facility_type),
+                        anchor: [0.5, 0.5],
+                        scale: 1,
                     }),
                     text: new Text({
                         text: item.name,
-                        offsetY: -14,
+                        offsetY: -22, // 마커 아이콘 위쪽으로 텍스트 위치 조절
                         font: 'bold 11px sans-serif',
                         fill: new Fill({ color: '#1e293b' }),
-                        stroke: new Stroke({ color: '#ffffff', width: 2 }),
+                        stroke: new Stroke({ color: '#ffffff', width: 2.5 }),
                     }),
                 })
             );

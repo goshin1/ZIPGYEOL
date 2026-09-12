@@ -10,8 +10,7 @@ import {
     ResponsiveContainer,
 } from 'recharts';
 import { Building2, Trees, Landmark, School, Hospital, Train, Store } from 'lucide-react';
-import {FacilityItem} from "@/lib/calculator";
-
+import { FacilityItem } from "@/lib/calculator";
 
 interface RegionDetailProps {
     activeSlotName: string;
@@ -67,27 +66,27 @@ export default function RegionDetailSection({ activeSlotName, facilities, mobile
     }, [facilities, selectedCategory]);
 
     return (
-        <div className={`bg-white border-t border-slate-200 p-4 flex-col gap-3 shrink-0 overflow-y-auto ${
-            mobileTab === 'details' ? 'flex flex-1 md:h-72' : 'hidden md:flex md:h-72'
+        <div className={`bg-white border-t border-slate-200 p-4 flex-col gap-3 shrink-0 ${
+            mobileTab === 'details' ? 'flex flex-1' : 'hidden md:flex'
         }`}>
             {/* 상단 탭 헤더 */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                 <div>
-                    <h2 className="text-lg font-bold text-slate-900">선택 지역 상세 정보</h2>
-                    <p className="text-xs text-slate-500 mt-0.5">
+                    <h2 className="text-base font-bold text-slate-900">선택 지역 상세 정보</h2>
+                    <p className="text-xs text-slate-500">
                         <span className="font-semibold text-blue-600">{activeSlotName}</span> 중심 2km 이내 주요 입지 분석
                     </p>
                 </div>
 
                 {/* 카테고리 필터 칩 */}
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-1">
                     {Object.entries(CATEGORY_MAP).map(([key, config]) => (
                         <button
                             key={key}
                             onClick={() => setSelectedCategory(key)}
-                            className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+                            className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${
                                 selectedCategory === key
-                                    ? 'bg-slate-900 text-white border-slate-900 shadow-sm scale-105'
+                                    ? 'bg-slate-900 text-white border-slate-900 shadow-sm'
                                     : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
                             }`}
                         >
@@ -98,30 +97,30 @@ export default function RegionDetailSection({ activeSlotName, facilities, mobile
             </div>
 
             {/* 메인 콘텐츠 3열 그리드 */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 min-h-60">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* 1. 선택 카테고리 시설 상세 목록 */}
-                <div className="bg-white p-4 rounded-xl border border-slate-200 flex flex-col justify-between">
-                    <h3 className="text-sm font-bold text-slate-800 mb-3 flex items-center justify-between">
+                <div className="bg-white p-3.5 rounded-xl border border-slate-200 flex flex-col justify-between h-[230px]">
+                    <h3 className="text-xs font-bold text-slate-800 mb-2 flex items-center justify-between">
                         <span>{CATEGORY_MAP[selectedCategory]?.label} 목록</span>
-                        <span className="text-xs text-slate-400 font-normal">거리순</span>
+                        <span className="text-[11px] text-slate-400 font-normal">거리순</span>
                     </h3>
-                    <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                    <div className="space-y-1.5 flex-1 overflow-y-auto pr-1">
                         {filteredFacilities.length > 0 ? (
                             filteredFacilities.map((item) => (
                                 <div
                                     key={item.id}
-                                    className="p-2.5 rounded-lg border border-slate-100 bg-slate-50 hover:bg-blue-50/50 transition-colors flex justify-between items-center"
+                                    className="p-2 rounded-lg border border-slate-100 bg-slate-50 hover:bg-blue-50/50 transition-colors flex justify-between items-center"
                                 >
-                                    <span className="font-semibold text-slate-800 text-xs truncate max-w-[170px]">
+                                    <span className="font-semibold text-slate-800 text-xs truncate max-w-[160px]">
                                         {item.name}
                                     </span>
-                                    <span className="text-[11px] font-bold text-blue-600 bg-white px-2 py-0.5 rounded-md border border-slate-200">
+                                    <span className="text-[10px] font-bold text-blue-600 bg-white px-1.5 py-0.5 rounded border border-slate-200">
                                         {Math.round(item.distance_meters)}m
                                     </span>
                                 </div>
                             ))
                         ) : (
-                            <div className="text-center py-12 text-xs text-slate-400">
+                            <div className="h-full flex items-center justify-center text-xs text-slate-400">
                                 해당 유형의 시설이 반경 내에 없습니다.
                             </div>
                         )}
@@ -129,21 +128,21 @@ export default function RegionDetailSection({ activeSlotName, facilities, mobile
                 </div>
 
                 {/* 2. 주변 환경 요약 개수 */}
-                <div className="bg-white p-4 rounded-xl border border-slate-200 flex flex-col">
-                    <h3 className="text-sm font-bold text-slate-800 mb-3">주변 인프라 분포</h3>
-                    <div className="grid grid-cols-2 gap-2 my-auto">
+                <div className="bg-white p-3.5 rounded-xl border border-slate-200 flex flex-col justify-between h-[230px]">
+                    <h3 className="text-xs font-bold text-slate-800 mb-2">주변 인프라 분포</h3>
+                    <div className="grid grid-cols-2 gap-1.5 my-auto">
                         {Object.entries(CATEGORY_MAP).map(([key, config]) => {
                             const IconComponent = config.icon;
                             return (
                                 <div
                                     key={key}
-                                    className={`p-2.5 rounded-lg border ${config.color} flex items-center justify-between`}
+                                    className={`p-2 rounded-lg border ${config.color} flex items-center justify-between`}
                                 >
                                     <div className="flex items-center gap-1.5">
-                                        <IconComponent className="w-4 h-4" />
+                                        <IconComponent className="w-3.5 h-3.5" />
                                         <span className="text-xs font-semibold">{config.label}</span>
                                     </div>
-                                    <span className="text-sm font-extrabold">{counts[key]}개</span>
+                                    <span className="text-xs font-extrabold">{counts[key]}개</span>
                                 </div>
                             );
                         })}
@@ -151,13 +150,13 @@ export default function RegionDetailSection({ activeSlotName, facilities, mobile
                 </div>
 
                 {/* 3. 생활권 종합 점수 레이더 차트 */}
-                <div className="bg-white p-4 rounded-xl border border-slate-200 flex flex-col items-center">
-                    <h3 className="text-sm font-bold text-slate-800 mb-1 w-full text-left">생활권 입지 종합 점수</h3>
-                    <div className="w-full h-52">
+                <div className="bg-white p-3.5 rounded-xl border border-slate-200 flex flex-col items-center justify-between h-[230px]">
+                    <h3 className="text-xs font-bold text-slate-800 w-full text-left">생활권 입지 종합 점수</h3>
+                    <div className="w-full h-40">
                         <ResponsiveContainer width="100%" height="100%">
-                            <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
+                            <RadarChart cx="50%" cy="50%" outerRadius="68%" data={radarData}>
                                 <PolarGrid stroke="#e2e8f0" />
-                                <PolarAngleAxis dataKey="subject" tick={{ fill: '#64748b', fontSize: 11 }} />
+                                <PolarAngleAxis dataKey="subject" tick={{ fill: '#64748b', fontSize: 10 }} />
                                 <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} />
                                 <Radar
                                     name="입지점수"
