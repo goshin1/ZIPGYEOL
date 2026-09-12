@@ -18,6 +18,7 @@ import {
     Hospital
 } from 'lucide-react';
 import AnalysisPanel from "@/components/analytics/AnalysisPanel";
+import {FacilityItem} from "@/lib/calculator";
 
 
 export interface RegionSlot {
@@ -52,6 +53,9 @@ export default function Home() {
         {id: 'B', name: '명동역', lat: 37.5609, lng: 126.9863, color: '#9333ea'},
         {id: 'C', name: '가평 참전비공원', lat: 37.8257, lng: 127.5163, color: '#10b981'},
     ]);
+
+    // 조회된 시설 정보
+    const [facilities, setFacilities] = useState<FacilityItem[]>([]);
 
     // 현재 지도 이동 대상 슬롯
     const [activeSlot, setActiveSlot] = useState<RegionSlot>(slots[0]);
@@ -109,6 +113,11 @@ export default function Home() {
         if (mobileTab === 'compare') setMobileTab('map'); // 모바일에서 선택 시 지도로 전환
     };
 
+    const subwayCount = facilities.filter((f) => f.facility_type === 'SUBWAY').length;
+    const parkCount = facilities.filter((f) => f.facility_type === 'PARK').length;
+    const govCount = facilities.filter((f) => f.facility_type === 'GOV').length;
+    const hospitalCount = facilities.filter((f) => f.facility_type === 'HOSPITAL').length;
+
     return (
         <div className="flex flex-col h-screen w-screen overflow-hidden bg-slate-100">
             {/* 1. 상단 네비게이션 헤더 (반응형 적용) */}
@@ -149,7 +158,8 @@ export default function Home() {
                     {/* 지도 영역 (모바일 'details' 탭에서는 숨김) */}
                     <div className={`relative flex-1 ${mobileTab === 'details' ? 'hidden md:block' : 'block'}`}>
                         {/* activeSlot 전달 */}
-                        <VWorldMap activeSlot={activeSlot} slots={slots} onSelectSlot={handleSelectSlot} />
+                        <VWorldMap activeSlot={activeSlot} slots={slots} onSelectSlot={handleSelectSlot}
+                                   onFacilitiesFetched={(data) => setFacilities(data)}/>
 
                         {/* 모바일 화면 (1) - 선택 지역 비교 오버레이 카드 */}
                         <div className="md:hidden absolute bottom-4 left-4 right-4 z-10 bg-white/95 backdrop-blur-md p-3.5 rounded-2xl shadow-xl border border-slate-200">
@@ -244,7 +254,7 @@ export default function Home() {
                 {/* [우측] 비교 분석 패널 (모바일 'compare' 탭에서 전체 화면 전면 노출) */}
                 <aside className={`${mobileTab === 'compare' ? 'flex flex-1 w-full' : 'hidden md:block md:w-[380px]'} shrink-0 h-full overflow-hidden`}>
                     {/* slots 및 슬롯 변경 함수 전달 */}
-                    <AnalysisPanel slots={slots} activeSlot={activeSlot} onSelectSlot={handleSelectSlot} />
+                    <AnalysisPanel facilities={facilities} slots={slots} activeSlot={activeSlot} onSelectSlot={handleSelectSlot} />
                 </aside>
 
             </div>

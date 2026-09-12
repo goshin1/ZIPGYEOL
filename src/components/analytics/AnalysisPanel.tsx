@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import {useMemo} from 'react';
 import {
     LineChart,
     Line,
@@ -17,33 +17,40 @@ import {
     Radar,
 } from 'recharts';
 import {RegionSlot} from "@/app/page";
+import {calculateEnvironmentScores, FacilityItem} from "@/lib/calculator";
 
 interface AnalysisPanelProps {
-    slots: RegionSlot[];
-    activeSlot: RegionSlot;
-    onSelectSlot: (slot: RegionSlot) => void;
+    slots: any[];
+    activeSlot: any;
+    facilities: FacilityItem[];
+    onSelectSlot: (slot: any) => void;
 }
-
 // 시세 추이 데이터 (억 원 단위)
 const priceTrendData = [
-    { year: '2020', regionA: 14.2, regionB: 12.5, regionC: 10.8 },
-    { year: '2021', regionA: 16.8, regionB: 14.2, regionC: 12.1 },
-    { year: '2022', regionA: 15.5, regionB: 13.0, regionC: 11.2 },
-    { year: '2023', regionA: 16.2, regionB: 13.8, regionC: 11.9 },
-    { year: '2024', regionA: 17.5, regionB: 14.9, regionC: 12.8 },
+    {year: '2020', regionA: 14.2, regionB: 12.5, regionC: 10.8},
+    {year: '2021', regionA: 16.8, regionB: 14.2, regionC: 12.1},
+    {year: '2022', regionA: 15.5, regionB: 13.0, regionC: 11.2},
+    {year: '2023', regionA: 16.2, regionB: 13.8, regionC: 11.9},
+    {year: '2024', regionA: 17.5, regionB: 14.9, regionC: 12.8},
 ];
 
 // 주거 환경 평가 지표 데이터 (100점 만점)
 const environmentRadarData = [
-    { category: '교통 접근성', regionA: 95, regionB: 80, regionC: 70 },
-    { category: '공원/녹지', regionA: 65, regionB: 85, regionC: 90 },
-    { category: ' 의료 시설', regionA: 90, regionB: 75, regionC: 60 },
-    { category: '교육 환경', regionA: 85, regionB: 90, regionC: 65 },
-    { category: '편의 시설', regionA: 92, regionB: 70, regionC: 75 },
+    {category: '교통 접근성', regionA: 95, regionB: 80, regionC: 70},
+    {category: '공원/녹지', regionA: 65, regionB: 85, regionC: 90},
+    {category: ' 의료 시설', regionA: 90, regionB: 75, regionC: 60},
+    {category: '교육 환경', regionA: 85, regionB: 90, regionC: 65},
+    {category: '편의 시설', regionA: 92, regionB: 70, regionC: 75},
 ];
 
-export default function AnalysisPanel({ slots, activeSlot, onSelectSlot }: AnalysisPanelProps) {
-    const [activeTab, setActiveTab] = useState<'A' | 'B' | 'C'>('A');
+export default function AnalysisPanel({
+      slots,
+      activeSlot,
+      facilities,
+      onSelectSlot,
+  }: AnalysisPanelProps) {
+    // 실시간 조회된 facilities 기반 점수 계산
+    const currentScores = useMemo(() => calculateEnvironmentScores(facilities), [facilities]);
 
     return (
         <div className="w-full h-full bg-slate-50 border-l border-slate-200 p-4 overflow-y-auto space-y-6">
@@ -77,18 +84,27 @@ export default function AnalysisPanel({ slots, activeSlot, onSelectSlot }: Analy
                 <h3 className="text-xs font-bold text-slate-700 mb-4">아파트 매매 실거래가 추이 (최근 5년)</h3>
                 <div className="h-52 w-full">
                     <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={priceTrendData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                            <XAxis dataKey="year" tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
-                            <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
+                        <LineChart data={priceTrendData} margin={{top: 5, right: 10, left: -20, bottom: 0}}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9"/>
+                            <XAxis dataKey="year" tickLine={false} axisLine={false}
+                                   tick={{fontSize: 11, fill: '#64748b'}}/>
+                            <YAxis tickLine={false} axisLine={false} tick={{fontSize: 11, fill: '#64748b'}}/>
                             <Tooltip
-                                contentStyle={{ backgroundColor: '#ffffff', borderRadius: '12px', borderColor: '#e2e8f0', fontSize: '12px' }}
+                                contentStyle={{
+                                    backgroundColor: '#ffffff',
+                                    borderRadius: '12px',
+                                    borderColor: '#e2e8f0',
+                                    fontSize: '12px'
+                                }}
                                 formatter={(value) => [`${value ?? 0}억 원`, '']}
                             />
-                            <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }} />
-                            <Line type="monotone" dataKey="regionA" name="강남구 역삼동" stroke="#2563eb" strokeWidth={2.5} dot={{ r: 3 }} />
-                            <Line type="monotone" dataKey="regionB" name="서초구 서초동" stroke="#9333ea" strokeWidth={2.5} dot={{ r: 3 }} />
-                            <Line type="monotone" dataKey="regionC" name="송파구 잠실동" stroke="#10b981" strokeWidth={2.5} dot={{ r: 3 }} />
+                            <Legend wrapperStyle={{fontSize: '11px', paddingTop: '8px'}}/>
+                            <Line type="monotone" dataKey="regionA" name="강남구 역삼동" stroke="#2563eb" strokeWidth={2.5}
+                                  dot={{r: 3}}/>
+                            <Line type="monotone" dataKey="regionB" name="서초구 서초동" stroke="#9333ea" strokeWidth={2.5}
+                                  dot={{r: 3}}/>
+                            <Line type="monotone" dataKey="regionC" name="송파구 잠실동" stroke="#10b981" strokeWidth={2.5}
+                                  dot={{r: 3}}/>
                         </LineChart>
                     </ResponsiveContainer>
                 </div>
@@ -99,15 +115,21 @@ export default function AnalysisPanel({ slots, activeSlot, onSelectSlot }: Analy
                 <h3 className="text-xs font-bold text-slate-700 mb-2">입지 주거 환경 다각도 비교</h3>
                 <div className="h-60 w-full">
                     <ResponsiveContainer width="100%" height="100%">
-                        <RadarChart cx="50%" cy="50%" outerRadius="70%" data={environmentRadarData}>
+                        <RadarChart cx="50%" cy="50%" outerRadius="70%" data={currentScores}>
                             <PolarGrid stroke="#e2e8f0" />
                             <PolarAngleAxis dataKey="category" tick={{ fill: '#475569', fontSize: 10, fontWeight: 600 }} />
                             <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
-                            <Radar name="강남구 역삼동" dataKey="regionA" stroke="#2563eb" fill="#2563eb" fillOpacity={0.25} />
-                            <Radar name="서초구 서초동" dataKey="regionB" stroke="#9333ea" fill="#9333ea" fillOpacity={0.25} />
-                            <Radar name="송파구 잠실동" dataKey="regionC" stroke="#10b981" fill="#10b981" fillOpacity={0.25} />
-                            <Tooltip contentStyle={{ backgroundColor: '#ffffff', borderRadius: '12px', fontSize: '11px' }} />
-                            <Legend wrapperStyle={{ fontSize: '11px' }} />
+                            <Radar
+                                name={activeSlot.name}
+                                dataKey="score"
+                                stroke={activeSlot.color || '#2563eb'}
+                                fill={activeSlot.color || '#2563eb'}
+                                fillOpacity={0.35}
+                            />
+                            <Tooltip
+                                contentStyle={{ backgroundColor: '#ffffff', borderRadius: '8px', fontSize: '11px' }}
+                                formatter={(value: any) => [`${value ?? 0}점`, '점수']}
+                            />
                         </RadarChart>
                     </ResponsiveContainer>
                 </div>
