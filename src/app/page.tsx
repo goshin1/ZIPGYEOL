@@ -140,7 +140,7 @@ export default function Home() {
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder={`[${activeSlot.id} 슬롯] 장소/주소 검색 (예: 강남역, 역삼동)`}
                         disabled={isSearching}
-                        className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-100 rounded-full border border-transparent focus:bg-white focus:border-blue-500 focus:outline-none transition-all disabled:opacity-50"
+                        className="w-full px-4 py-2 text-sm indent-3 text-slate-900 bg-slate-100 placeholder-slate-400 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all disabled:opacity-50 focus:ring-blue-500"
                     />
                 </form>
 
