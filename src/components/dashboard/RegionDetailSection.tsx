@@ -89,6 +89,25 @@ export default function RegionDetailSection({ activeSlotName, facilities, mobile
             .sort((a, b) => (a.distance_meters || 0) - (b.distance_meters || 0));
     }, [facilities, selectedCategory]);
 
+    // 시설 데이터를 카테고리 별로 분류
+    const categorized = useMemo(() => {
+        const result = {
+            SUBWAY: [] as FacilityItem[],
+            PARK: [] as FacilityItem[],
+            HOSPITAL: [] as FacilityItem[],
+            SCHOOL: [] as FacilityItem[],
+            STORE: [] as FacilityItem[],
+        };
+
+        facilities.forEach((item) => {
+            if (result[item.facility_type as keyof typeof result]) {
+                result[item.facility_type as keyof typeof result].push(item);
+            }
+        });
+
+        return result;
+    }, [facilities]);
+
     return (
         <div className={`bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 p-4 flex-col gap-3 shrink-0 transition-colors ${
             mobileTab === 'details' ? 'flex flex-1' : 'hidden md:flex'

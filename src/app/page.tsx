@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Sun, Moon, Search, Map as MapIcon, ListFilter, BarChart3 } from 'lucide-react';
+import { Sun, Moon, Search, Map as MapIcon, ListFilter, BarChart3, AlertCircle } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import AnalysisPanel from "@/components/analytics/AnalysisPanel";
 import { FacilityItem } from "@/lib/calculator";
@@ -33,6 +33,9 @@ export default function Home() {
     // 라이트/다크 스위치
     const [isDark, setIsDark] = useState(false);
 
+    // Toast 메시지 상태 관리
+    const [toastMessage, setToastMessage] = useState<string | null>(null);
+
     // A/B/C 비교 슬롯 전역 상태
     const [slots, setSlots] = useState<RegionSlot[]>([
         { id: 'A', name: '서울역', lat: 37.5561, lng: 126.9723, color: '#2563eb' },
@@ -40,16 +43,37 @@ export default function Home() {
         { id: 'C', name: '가평 참전비공원', lat: 37.8257, lng: 127.5163, color: '#10b981' },
     ]);
 
-    // 조회된 시설 정보
-    const [facilities, setFacilities] = useState<FacilityItem[]>([]);
+    // 슬롯별 독립적인 주변 시설 목록 관리 ({ A: [], B: [], C: [] })
+    const [slotFacilities, setSlotFacilities] = useState<Record<'A' | 'B' | 'C', FacilityItem[]>>({
+        A: [],
+        B: [],
+        C: [],
+    });
 
     // 현재 지도 이동 대상 슬롯
     const [activeSlot, setActiveSlot] = useState<RegionSlot>(slots[0]);
 
+    // 토스트 출력 함수
+    const showToast = (msg: string) => {
+        setToastMessage(msg);
+        setTimeout(() => setToastMessage(null), 3000);
+    };
+
+    // VWorldMap 콜백: (slotId, data)를 전달받아 해당 슬롯 상태 독립 갱신
+    const handleFacilitiesFetched = (slotId: 'A' | 'B' | 'C', data: FacilityItem[]) => {
+        setSlotFacilities((prev) => ({
+            ...prev,
+            [slotId]: data,
+        }));
+    };
+
     // Geocoding 검색 API 호출 및 활성화 된 슬롯 갱신
     const handleSearch = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!searchQuery.trim()) return;
+        if (!searchQuery.trim()) {
+            showToast('검색어를 입력해 주세요.');
+            return;
+        }
 
         setIsSearching(true);
         const apiKey = process.env.NEXT_PUBLIC_VWORLD_API_KEY;
@@ -81,10 +105,13 @@ export default function Home() {
                 setSlots((prev) => prev.map((s) => (s.id === activeSlot.id ? updatedSlot : s)));
                 setActiveSlot(updatedSlot);
                 setSearchQuery('');
+                showToast(`[${activeSlot.id} 슬롯] '${placeName}'(으)로 이동했습니다.`);
+            } else {
+                showToast('검색 결과가 없습니다. 다른 검색어를 입력해 보세요.');
             }
         } catch (error) {
             console.error('VWorld Geocoding API Error:', error);
-            alert('검색 중 오류가 발생했습니다.');
+            showToast('검색 처리 중 오류가 발생했습니다.');
         } finally {
             setIsSearching(false);
         }
@@ -124,7 +151,15 @@ export default function Home() {
     }, []);
 
     return (
-        <div className="flex flex-col h-screen w-screen overflow-hidden bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200">
+        <div className="flex flex-col h-screen w-screen overflow-hidden bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200 relative">
+            {/* Toast 알림 팝업 */}
+            {toastMessage && (
+                <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-slate-900/90 dark:bg-slate-100/90 text-white dark:text-slate-900 px-4 py-2.5 rounded-xl shadow-2xl backdrop-blur-md text-xs font-semibold animate-in fade-in slide-in-from-top-2 duration-200">
+                    <AlertCircle className="w-4 h-4 text-blue-400 dark:text-blue-600 shrink-0" />
+                    <span>{toastMessage}</span>
+                </div>
+            )}
+
             {/* 1. 상단 네비게이션 헤더 */}
             <header className="h-14 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 md:px-6 flex items-center justify-between shrink-0 z-20 transition-colors">
                 <div className="flex items-center gap-2">
@@ -171,38 +206,48 @@ export default function Home() {
                             activeSlot={activeSlot}
                             slots={slots}
                             onSelectSlot={handleSelectSlot}
-                            onFacilitiesFetched={(data) => setFacilities(data)}
+                            onFacilitiesFetched={handleFacilitiesFetched}
                         />
 
-                        {/* 모바일 화면 - 선택 지역 비교 오버레이 카드 */}
+                        {/* 모바일 화면 - 선택 지역 동적 슬롯 오버레이 카드 */}
                         <div className="md:hidden absolute bottom-4 left-4 right-4 z-10 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md p-3.5 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800">
                             <div className="flex justify-between items-center mb-2">
                                 <span className="text-xs font-bold text-slate-800 dark:text-slate-200">선택 지역 비교</span>
                                 <span className="text-[10px] text-slate-400 dark:text-slate-500">3개 선택됨</span>
                             </div>
-                            <div className="grid grid-cols-3 gap-1.5 text-center text-xs font-bold mb-2">
-                                <div className="p-1.5 bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 rounded-lg">A 역삼동</div>
-                                <div className="p-1.5 bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 rounded-lg">B 서초동</div>
-                                <div className="p-1.5 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 rounded-lg">C 잠실동</div>
-                            </div>
-                            <div className="text-[11px] text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50 p-2 rounded-lg flex justify-between items-center">
-                                <span>평균 매매가(3.3m²)</span>
-                                <span className="font-bold text-blue-600 dark:text-blue-400">A: 4.8억 ▲12%</span>
+                            <div className="grid grid-cols-3 gap-1.5 text-center text-xs font-bold">
+                                {slots.map((s) => (
+                                    <div
+                                        key={s.id}
+                                        className="p-1.5 rounded-lg truncate"
+                                        style={{
+                                            backgroundColor: `${s.color}15`,
+                                            color: s.color,
+                                        }}
+                                    >
+                                        {s.id} {s.name}
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     </div>
 
-                    {/* 하단 상세 정보 패널 */}
+                    {/* 하단 상세 정보 패널 - 현재 활성화된 슬롯의 시설 데이터 연동 */}
                     <RegionDetailSection
                         activeSlotName={activeSlot.name}
-                        facilities={facilities}
+                        facilities={slotFacilities[activeSlot.id] || []}
                         mobileTab={mobileTab}
                     />
                 </div>
 
-                {/* [우측] 비교 분석 패널 */}
+                {/* [우측] 비교 분석 패널 - A/B/C 전체 슬롯의 시설 데이터 Map 전달 */}
                 <aside className={`${mobileTab === 'compare' ? 'flex flex-1 w-full' : 'hidden md:block md:w-[380px]'} shrink-0 h-full overflow-hidden bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 transition-colors`}>
-                    <AnalysisPanel facilities={facilities} slots={slots} activeSlot={activeSlot} onSelectSlot={handleSelectSlot} />
+                    <AnalysisPanel
+                        slotFacilities={slotFacilities}
+                        slots={slots}
+                        activeSlot={activeSlot}
+                        onSelectSlot={handleSelectSlot}
+                    />
                 </aside>
 
             </div>

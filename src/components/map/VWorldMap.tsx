@@ -16,6 +16,7 @@ import { Style, Fill, Stroke, Text, Icon } from 'ol/style';
 import { supabase } from '@/lib/supabase';
 import { Building2, Trees, Landmark, School, Hospital, Train, Store, X } from 'lucide-react';
 import { RegionSlot } from "@/app/page";
+import { FacilityItem } from "@/lib/calculator";
 
 interface LayerToggle {
     id: string;
@@ -29,10 +30,9 @@ interface VWorldMapProps {
     activeSlot: RegionSlot;
     slots: RegionSlot[];
     onSelectSlot: (slot: RegionSlot) => void;
-    onFacilitiesFetched: (data: any[]) => void;
+    onFacilitiesFetched: (slotId: 'A' | 'B' | 'C', facilities: FacilityItem[]) => void;
 }
 
-// 카테고리별 SVG 아이콘 Path (Lucide 아이콘 규격)
 const ICON_SVG_PATHS: Record<string, string> = {
     APT: '<path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18"/><path d="M6 12H4a2 2 0 0 0-2 2v8"/><path d="M18 9h2a2 2 0 0 1 2 2v11"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/>',
     PARK: '<path d="M10 10v.2A3 3 0 0 1 8.9 16H5a3 3 0 0 1-1-5.8V10a3 3 0 0 1 6 0Z"/><path d="M7 16v6"/><path d="M13 19v3"/><path d="M12 19h2a3 3 0 0 0 1-5.8V13a3 3 0 0 0-6 0v.2A3 3 0 0 0 8.9 19H12Z"/>',
@@ -43,7 +43,6 @@ const ICON_SVG_PATHS: Record<string, string> = {
     STORE: '<path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/>',
 };
 
-// 범례 색상 + 흰색 SVG 아이콘 마커 생성 함수
 const createCustomMarkerSvg = (color: string, type: string) => {
     const svgPath = ICON_SVG_PATHS[type] || ICON_SVG_PATHS.APT;
     const svg = `
@@ -63,7 +62,6 @@ export default function VWorldMap({ activeSlot, slots, onSelectSlot, onFacilitie
     const overlayRef = useRef<Overlay | null>(null);
     const vectorSourceRef = useRef<VectorSource>(new VectorSource());
 
-    // 부모 콜백 Ref 관리
     const onFacilitiesFetchedRef = useRef(onFacilitiesFetched);
     useEffect(() => {
         onFacilitiesFetchedRef.current = onFacilitiesFetched;
@@ -83,7 +81,6 @@ export default function VWorldMap({ activeSlot, slots, onSelectSlot, onFacilitie
         { id: 'STORE', label: '편의시설', icon: Store, enabled: false, color: '#ca8a04' },
     ]);
 
-    // Supabase RPC 호출
     const fetchNearbyFacilities = useCallback(async (lat: number, lng: number) => {
         try {
             const { data, error } = await supabase.rpc('get_nearby_facilities', {
@@ -99,14 +96,13 @@ export default function VWorldMap({ activeSlot, slots, onSelectSlot, onFacilitie
 
             if (data) {
                 setFacilities(data);
-                onFacilitiesFetchedRef.current?.(data);
+                onFacilitiesFetchedRef.current?.(activeSlot.id, data);
             }
         } catch (err) {
             console.error('Data Fetching Failed:', err);
         }
-    }, []);
+    }, [activeSlot.id]);
 
-    // OpenLayers 지도 초기화
     useEffect(() => {
         if (!mapRef.current || !popupRef.current) return;
 
@@ -117,10 +113,12 @@ export default function VWorldMap({ activeSlot, slots, onSelectSlot, onFacilitie
             autoPan: { animation: { duration: 250 } },
             positioning: 'bottom-center',
             offset: [0, -15],
+            stopEvent: true,
         });
         overlayRef.current = overlay;
 
         const vworldBaseLayer = new TileLayer({
+            className: 'vworld-tile-layer', // 타일 레이어 전용 클래스 부여
             source: new XYZ({
                 url: `https://api.vworld.kr/req/wmts/1.0.0/${apiKey}/Base/{z}/{y}/{x}.png`,
                 crossOrigin: 'anonymous',
@@ -185,9 +183,8 @@ export default function VWorldMap({ activeSlot, slots, onSelectSlot, onFacilitie
             clearTimeout(timer);
             map.setTarget(undefined);
         };
-    }, []);
+    }, [fetchNearbyFacilities]);
 
-    // facilities 데이터 기반 마커 랜더링
     useEffect(() => {
         const vectorSource = vectorSourceRef.current;
         vectorSource.clear();
@@ -228,7 +225,6 @@ export default function VWorldMap({ activeSlot, slots, onSelectSlot, onFacilitie
         });
     }, [facilities, layers]);
 
-    // activeSlot 변경 시 Fly-To
     useEffect(() => {
         const map = mapInstanceRef.current;
         if (!map || !activeSlot) return;
@@ -248,38 +244,58 @@ export default function VWorldMap({ activeSlot, slots, onSelectSlot, onFacilitie
     };
 
     return (
-        <div className="relative w-full h-full">
-            <div ref={mapRef} className="w-full h-full bg-slate-100 dark:bg-slate-900 transition-all duration-300 dark:invert-[0.95] dark:hue-rotate-10 dark:brightness-100" />
+        <div className="relative w-full h-full overflow-hidden">
+            {/*
+              CSS 스타일 추가:
+              mapContainer 전체에 invert를 걸지 않고, 오직 VWorld 지도 타일(.vworld-tile-layer)에만 다크모드 반전을 적용합니다.
+              이를 통해 OpenLayers가 상위 컨테이너로 이동시킨 Overlay DOM이 반전 필터에 휩쓸리지 않습니다.
+            */}
+            <style jsx global>{`
+                .dark .vworld-tile-layer {
+                    filter: invert(0.95) hue-rotate(350deg) brightness(1) !important;
+                }
+            `}</style>
 
-            {/* 1. 마커 클릭 팝업 오버레이 (다크모드 지원 반영) */}
+            {/* 지도 Container (여기에는 invert 필터를 걸지 않습니다) */}
+            <div
+                ref={mapRef}
+                className="w-full h-full bg-slate-100 dark:bg-slate-950 transition-colors duration-300"
+            />
+
+            {/* 1. 마커 클릭 팝업 오버레이 (정상적으로 다크/화이트 테마 클래스가 반영됨) */}
             <div
                 ref={popupRef}
-                className={`bg-white/95 dark:bg-slate-900/95 backdrop-blur-md px-3.5 py-2.5 rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 transition-all z-20 ${
+                className={`z-30 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-3.5 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 transition-none ${
                     selectedFeature ? 'block' : 'hidden'
                 }`}
             >
                 {selectedFeature && (
-                    <div className="space-y-1 relative pr-4">
+                    <div className="space-y-1 relative pr-5 min-w-[140px]">
                         <button
-                            onClick={() => overlayRef.current?.setPosition(undefined)}
-                            className="absolute -top-1 -right-3 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 p-1"
+                            onClick={() => {
+                                overlayRef.current?.setPosition(undefined);
+                                setSelectedFeature(null);
+                            }}
+                            className="absolute -top-1 -right-2 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 p-1 rounded-lg transition-colors"
                         >
-                            <X className="w-3 h-3" />
+                            <X className="w-3.5 h-3.5" />
                         </button>
-                        <div className="text-[10px] text-blue-600 dark:text-blue-400 font-bold tracking-wider">
+                        <div className="text-[10px] text-blue-600 dark:text-blue-400 font-bold tracking-wider uppercase">
                             {selectedFeature.type}
                         </div>
-                        <div className="font-bold text-slate-900 dark:text-white text-sm">{selectedFeature.name}</div>
-                        {selectedFeature.distance && (
-                            <div className="text-[11px] text-slate-500 dark:text-slate-400 font-normal">
-                                중심점으로부터 <span className="font-bold text-slate-700 dark:text-slate-200">{Math.round(selectedFeature.distance)}m</span>
+                        <div className="font-bold text-slate-900 dark:text-white text-sm leading-tight">
+                            {selectedFeature.name}
+                        </div>
+                        {selectedFeature.distance !== undefined && (
+                            <div className="text-[11px] text-slate-500 dark:text-slate-400 font-normal pt-0.5">
+                                반경 <span className="font-bold text-slate-700 dark:text-slate-200">{Math.round(selectedFeature.distance)}m</span>
                             </div>
                         )}
                     </div>
                 )}
             </div>
 
-            {/* 2. 상단 오버레이 - 선택 지역 칩 (다크모드 지원 반영) */}
+            {/* 2. 상단 오버레이 - 선택 지역 칩 */}
             <div className="absolute top-4 left-4 z-10 flex items-center gap-2 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md p-2 rounded-xl shadow-lg border border-slate-200 dark:border-slate-800">
                 <span className="text-xs font-bold text-slate-500 dark:text-slate-400 px-2">지역 선택</span>
                 <div className="flex gap-1.5">
@@ -304,7 +320,7 @@ export default function VWorldMap({ activeSlot, slots, onSelectSlot, onFacilitie
                 </div>
             </div>
 
-            {/* 3. 좌측 레이어 토글 패널 (다크모드 지원 반영) */}
+            {/* 3. 좌측 레이어 토글 패널 */}
             <div className="absolute top-20 left-4 z-10 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md p-3 rounded-xl shadow-lg border border-slate-200 dark:border-slate-800 w-44">
                 <h3 className="text-xs font-bold text-slate-700 dark:text-slate-200 mb-2.5">주변 환경 레이어</h3>
                 <div className="space-y-2">
