@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import AnalysisPanel from "@/components/analytics/AnalysisPanel";
 import {FacilityItem} from "@/lib/calculator";
+import RegionDetailSection from "@/components/dashboard/RegionDetailSection";
 
 
 export interface RegionSlot {
@@ -132,7 +133,7 @@ export default function Home() {
 
                 {/* VWorld 장소 검색 폼 */}
                 <form onSubmit={handleSearch} className="relative w-44 sm:w-64 md:w-[450px]">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5  text-slate-400" />
                     <input
                         type="text"
                         value={searchQuery}
@@ -181,74 +182,11 @@ export default function Home() {
                     </div>
 
                     {/* 하단/모바일 상세 정보 패널 (모바일 'details' 탭에서는 전면 노출) */}
-                    <div className={`bg-white border-t border-slate-200 p-4 flex-col gap-3 shrink-0 overflow-y-auto ${
-                        mobileTab === 'details' ? 'flex flex-1 md:h-72' : 'hidden md:flex md:h-72'
-                    }`}>
-                        <div className="flex items-center justify-between border-b pb-2">
-                            <h2 className="font-bold text-slate-800 text-xs md:text-sm">선택 지역 상세 정보</h2>
-                            <div className="flex gap-1 overflow-x-auto pb-1 text-xs no-scrollbar">
-                                <button
-                                    className="px-2.5 py-1 rounded-full bg-blue-600 text-white font-semibold whitespace-nowrap">아파트
-                                    (12)
-                                </button>
-                                <button
-                                    className="px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 font-medium whitespace-nowrap">공원
-                                    (5)
-                                </button>
-                                <button
-                                    className="px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 font-medium whitespace-nowrap">공공기관
-                                    (4)
-                                </button>
-                                <button
-                                    className="px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 font-medium whitespace-nowrap">교통
-                                    (3)
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* 카드 목록 (모바일 1열 / 데스크탑 3열) */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 flex-1">
-                            <div className="border border-slate-200 rounded-xl p-3 bg-slate-50/50 space-y-2">
-                                <div className="font-bold text-xs text-slate-700 mb-1">대표 아파트 매물</div>
-                                <div
-                                    className="bg-white p-2.5 rounded-lg border text-xs flex justify-between items-center">
-                                    <div>
-                                        <div className="font-bold text-slate-800">역삼동 현대아파트</div>
-                                        <div className="text-[10px] text-slate-400">전용 84m² | 준공 2012년</div>
-                                    </div>
-                                    <div className="font-black text-blue-600 text-xs">매매 12.5억</div>
-                                </div>
-                                <div
-                                    className="bg-white p-2.5 rounded-lg border text-xs flex justify-between items-center">
-                                    <div>
-                                        <div className="font-bold text-slate-800">서초동 래미안아파트</div>
-                                        <div className="text-[10px] text-slate-400">전용 59m² | 준공 2018년</div>
-                                    </div>
-                                    <div className="font-black text-blue-600 text-xs">매매 15.8억</div>
-                                </div>
-                            </div>
-
-                            <div className="border border-slate-200 rounded-xl p-3 bg-slate-50/50 space-y-2">
-                                <div className="font-bold text-xs text-slate-700 mb-1">주변 환경 정보</div>
-                                <div className="grid grid-cols-5 gap-1 text-center text-[10px]">
-                                    <div className="p-1.5 bg-white rounded border font-bold text-blue-600">공원 4</div>
-                                    <div className="p-1.5 bg-white rounded border font-bold text-blue-600">공공 3</div>
-                                    <div className="p-1.5 bg-white rounded border font-bold text-blue-600">학교 6</div>
-                                    <div className="p-1.5 bg-white rounded border font-bold text-blue-600">병원 2</div>
-                                    <div className="p-1.5 bg-white rounded border font-bold text-blue-600">지하철 8</div>
-                                </div>
-                            </div>
-
-                            <div
-                                className="border border-slate-200 rounded-xl p-3 bg-white space-y-2 flex flex-col justify-between">
-                                <div className="font-bold text-xs text-slate-700">생활권 종합 점수</div>
-                                <div
-                                    className="h-20 border border-dashed rounded-lg flex items-center justify-center text-xs text-slate-400">
-                                    Radar Chart (Recharts)
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <RegionDetailSection
+                        activeSlotName={activeSlot.name}
+                        facilities={facilities}
+                        mobileTab={mobileTab}
+                    />
                 </div>
 
                 {/* [우측] 비교 분석 패널 (모바일 'compare' 탭에서 전체 화면 전면 노출) */}
