@@ -8,8 +8,6 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -23,4 +21,24 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* 글로벌 CSS (globals.css 등) */
+html, body {
+  /* 모바일 스크롤 바운스 방지 및 Dynamic Viewport 설정 */
+  height: 100dvh;
+  overscroll-behavior-y: none;
+}
+
+/* 모바일 하단 Fixed 탭바 CSS */
+.mobile-bottom-tab {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  /* iOS Safe Area 대응 (아이폰 하단 홈 바 영역 확보) */
+  padding-bottom: env(safe-area-inset-bottom, 16px);
+  background-color: #ffffff;
+  border-top: 1px solid #e5e7eb;
 }
