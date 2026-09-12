@@ -8,8 +8,9 @@ import {
     PolarAngleAxis,
     PolarRadiusAxis,
     ResponsiveContainer,
+    Tooltip,
 } from 'recharts';
-import { Building2, Trees, Landmark, School, Hospital, Train, Store } from 'lucide-react';
+import { Trees, Landmark, School, Hospital, Train, Store } from 'lucide-react';
 import { FacilityItem } from "@/lib/calculator";
 
 interface RegionDetailProps {
@@ -19,22 +20,45 @@ interface RegionDetailProps {
 }
 
 const CATEGORY_MAP: Record<string, { label: string; icon: any; color: string }> = {
-    APT: { label: '아파트', icon: Building2, color: 'bg-blue-50 text-blue-600 border-blue-200' },
-    PARK: { label: '공원', icon: Trees, color: 'bg-emerald-50 text-emerald-600 border-emerald-200' },
-    GOV: { label: '공공기관', icon: Landmark, color: 'bg-purple-50 text-purple-600 border-purple-200' },
-    SCHOOL: { label: '학교', icon: School, color: 'bg-orange-50 text-orange-600 border-orange-200' },
-    HOSPITAL: { label: '병원', icon: Hospital, color: 'bg-red-50 text-red-600 border-red-200' },
-    SUBWAY: { label: '지하철/교통', icon: Train, color: 'bg-sky-50 text-sky-600 border-sky-200' },
-    STORE: { label: '편의시설', icon: Store, color: 'bg-amber-50 text-amber-600 border-amber-200' },
+    PARK: {
+        label: '공원',
+        icon: Trees,
+        color: 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/60'
+    },
+    GOV: {
+        label: '공공기관',
+        icon: Landmark,
+        color: 'bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-800/60'
+    },
+    SCHOOL: {
+        label: '학교',
+        icon: School,
+        color: 'bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800/60'
+    },
+    HOSPITAL: {
+        label: '병원',
+        icon: Hospital,
+        color: 'bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800/60'
+    },
+    SUBWAY: {
+        label: '지하철/교통',
+        icon: Train,
+        color: 'bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 border-sky-200 dark:border-sky-800/60'
+    },
+    STORE: {
+        label: '편의시설',
+        icon: Store,
+        color: 'bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800/60'
+    },
 };
 
 export default function RegionDetailSection({ activeSlotName, facilities, mobileTab }: RegionDetailProps) {
-    const [selectedCategory, setSelectedCategory] = useState<string>('APT');
+    const [selectedCategory, setSelectedCategory] = useState<string>('PARK');
 
     // 1. 카테고리별 시설 개수 집계
     const counts = useMemo(() => {
         const acc: Record<string, number> = {
-            APT: 0, PARK: 0, GOV: 0, SCHOOL: 0, HOSPITAL: 0, SUBWAY: 0, STORE: 0,
+            PARK: 0, GOV: 0, SCHOOL: 0, HOSPITAL: 0, SUBWAY: 0, STORE: 0,
         };
         facilities.forEach((item) => {
             if (acc[item.facility_type] !== undefined) {
@@ -44,17 +68,17 @@ export default function RegionDetailSection({ activeSlotName, facilities, mobile
         return acc;
     }, [facilities]);
 
-    // 2. 생활권 종합 점수 계산 (시설 수를 100점 만점 레이더 스코어로 환산)
+    // 2. 생활권 종합 점수 계산
     const radarData = useMemo(() => {
         const calcScore = (count: number, maxExpected: number = 10) =>
             Math.min(100, Math.round((count / maxExpected) * 100));
 
         return [
-            { subject: '교통 접근성', score: calcScore(counts.SUBWAY, 5), fullMark: 100 },
-            { subject: '공원/녹지', score: calcScore(counts.PARK, 8), fullMark: 100 },
-            { subject: '의료 시설', score: calcScore(counts.HOSPITAL, 6), fullMark: 100 },
-            { subject: '교육 환경', score: calcScore(counts.SCHOOL, 8), fullMark: 100 },
-            { subject: '편의 시설', score: calcScore(counts.STORE, 12), fullMark: 100 },
+            { subject: '교통 접근성', score: calcScore(counts.SUBWAY, 5) },
+            { subject: '공원/녹지', score: calcScore(counts.PARK, 8) },
+            { subject: '의료 시설', score: calcScore(counts.HOSPITAL, 6) },
+            { subject: '교육 환경', score: calcScore(counts.SCHOOL, 8) },
+            { subject: '편의 시설', score: calcScore(counts.STORE, 12) },
         ];
     }, [counts]);
 
@@ -66,15 +90,15 @@ export default function RegionDetailSection({ activeSlotName, facilities, mobile
     }, [facilities, selectedCategory]);
 
     return (
-        <div className={`bg-white border-t border-slate-200 p-4 flex-col gap-3 shrink-0 ${
+        <div className={`bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 p-4 flex-col gap-3 shrink-0 transition-colors ${
             mobileTab === 'details' ? 'flex flex-1' : 'hidden md:flex'
         }`}>
             {/* 상단 탭 헤더 */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                 <div>
-                    <h2 className="text-base font-bold text-slate-900">선택 지역 상세 정보</h2>
-                    <p className="text-xs text-slate-500">
-                        <span className="font-semibold text-blue-600">{activeSlotName}</span> 중심 2km 이내 주요 입지 분석
+                    <h2 className="text-base font-bold text-slate-900 dark:text-white">선택 지역 상세 정보</h2>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                        <span className="font-semibold text-blue-600 dark:text-blue-400">{activeSlotName}</span> 중심 2km 이내 주요 입지 분석
                     </p>
                 </div>
 
@@ -86,8 +110,8 @@ export default function RegionDetailSection({ activeSlotName, facilities, mobile
                             onClick={() => setSelectedCategory(key)}
                             className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${
                                 selectedCategory === key
-                                    ? 'bg-slate-900 text-white border-slate-900 shadow-sm'
-                                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
+                                    ? 'bg-slate-900 dark:bg-blue-600 text-white border-slate-900 dark:border-blue-500 shadow-sm'
+                                    : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
                             }`}
                         >
                             {config.label} ({counts[key] || 0})
@@ -99,28 +123,28 @@ export default function RegionDetailSection({ activeSlotName, facilities, mobile
             {/* 메인 콘텐츠 3열 그리드 */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* 1. 선택 카테고리 시설 상세 목록 */}
-                <div className="bg-white p-3.5 rounded-xl border border-slate-200 flex flex-col justify-between h-[230px]">
-                    <h3 className="text-xs font-bold text-slate-800 mb-2 flex items-center justify-between">
+                <div className="bg-white dark:bg-slate-800/50 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between h-[230px] transition-colors">
+                    <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 mb-2 flex items-center justify-between">
                         <span>{CATEGORY_MAP[selectedCategory]?.label} 목록</span>
-                        <span className="text-[11px] text-slate-400 font-normal">거리순</span>
+                        <span className="text-[11px] text-slate-400 dark:text-slate-500 font-normal">거리순</span>
                     </h3>
                     <div className="space-y-1.5 flex-1 overflow-y-auto pr-1">
                         {filteredFacilities.length > 0 ? (
                             filteredFacilities.map((item) => (
                                 <div
                                     key={item.id}
-                                    className="p-2 rounded-lg border border-slate-100 bg-slate-50 hover:bg-blue-50/50 transition-colors flex justify-between items-center"
+                                    className="p-2 rounded-lg border border-slate-100 dark:border-slate-700/50 bg-slate-50 dark:bg-slate-800/80 hover:bg-blue-50/50 dark:hover:bg-blue-950/40 transition-colors flex justify-between items-center"
                                 >
-                                    <span className="font-semibold text-slate-800 text-xs truncate max-w-[160px]">
+                                    <span className="font-semibold text-slate-800 dark:text-slate-200 text-xs truncate max-w-[160px]">
                                         {item.name}
                                     </span>
-                                    <span className="text-[10px] font-bold text-blue-600 bg-white px-1.5 py-0.5 rounded border border-slate-200">
+                                    <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-white dark:bg-slate-900 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700">
                                         {Math.round(item.distance_meters)}m
                                     </span>
                                 </div>
                             ))
                         ) : (
-                            <div className="h-full flex items-center justify-center text-xs text-slate-400">
+                            <div className="h-full flex items-center justify-center text-xs text-slate-400 dark:text-slate-500">
                                 해당 유형의 시설이 반경 내에 없습니다.
                             </div>
                         )}
@@ -128,15 +152,15 @@ export default function RegionDetailSection({ activeSlotName, facilities, mobile
                 </div>
 
                 {/* 2. 주변 환경 요약 개수 */}
-                <div className="bg-white p-3.5 rounded-xl border border-slate-200 flex flex-col justify-between h-[230px]">
-                    <h3 className="text-xs font-bold text-slate-800 mb-2">주변 인프라 분포</h3>
+                <div className="bg-white dark:bg-slate-800/50 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between h-[230px] transition-colors">
+                    <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 mb-2">주변 인프라 분포</h3>
                     <div className="grid grid-cols-2 gap-1.5 my-auto">
                         {Object.entries(CATEGORY_MAP).map(([key, config]) => {
                             const IconComponent = config.icon;
                             return (
                                 <div
                                     key={key}
-                                    className={`p-2 rounded-lg border ${config.color} flex items-center justify-between`}
+                                    className={`p-2 rounded-lg border ${config.color} flex items-center justify-between transition-colors`}
                                 >
                                     <div className="flex items-center gap-1.5">
                                         <IconComponent className="w-3.5 h-3.5" />
@@ -150,20 +174,33 @@ export default function RegionDetailSection({ activeSlotName, facilities, mobile
                 </div>
 
                 {/* 3. 생활권 종합 점수 레이더 차트 */}
-                <div className="bg-white p-3.5 rounded-xl border border-slate-200 flex flex-col items-center justify-between h-[230px]">
-                    <h3 className="text-xs font-bold text-slate-800 w-full text-left">생활권 입지 종합 점수</h3>
+                <div className="bg-white dark:bg-slate-800/50 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col items-center justify-between h-[230px] transition-colors">
+                    <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 w-full text-left">생활권 입지 종합 점수</h3>
                     <div className="w-full h-40">
                         <ResponsiveContainer width="100%" height="100%">
                             <RadarChart cx="50%" cy="50%" outerRadius="68%" data={radarData}>
-                                <PolarGrid stroke="#e2e8f0" />
-                                <PolarAngleAxis dataKey="subject" tick={{ fill: '#64748b', fontSize: 10 }} />
-                                <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} />
+                                <PolarGrid className="stroke-slate-200 dark:stroke-slate-700" />
+                                <PolarAngleAxis
+                                    dataKey="subject"
+                                    tick={{ fill: 'currentColor', fontSize: 10 }}
+                                    className="text-slate-600 dark:text-slate-400"
+                                />
+                                <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
                                 <Radar
                                     name="입지점수"
                                     dataKey="score"
                                     stroke="#2563eb"
                                     fill="#3b82f6"
                                     fillOpacity={0.4}
+                                />
+                                <Tooltip
+                                    contentStyle={{
+                                        backgroundColor: '#0f172a',
+                                        borderRadius: '8px',
+                                        borderColor: '#334155',
+                                        color: '#ffffff',
+                                        fontSize: '11px',
+                                    }}
                                 />
                             </RadarChart>
                         </ResponsiveContainer>
