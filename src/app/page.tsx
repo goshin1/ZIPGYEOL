@@ -79,25 +79,53 @@ export default function Home() {
         const apiKey = process.env.NEXT_PUBLIC_VWORLD_API_KEY;
 
         try {
-            // VWorld 장소(PLACE) 및 주소(ADDRESS) 검색 REST API
+            // 💡 category=PARCEL (지번 주소) 또는 ROAD (도로명 주소) 파라미터 추가
             const response = await fetch(
                 `/geocoding?service=search&request=search&version=2.0&crs=EPSG:4326&size=1&page=1&query=${encodeURIComponent(
                     searchQuery
-                )}&type=PLACE&format=json&errorformat=json&key=${apiKey}`
+                )}&type=ADDRESS&category=PARCEL&format=json&errorformat=json&key=${apiKey}`
             );
 
             const data = await response.json();
+
+            // API 응답 구조 체크
+            if (data.response?.status === 'ERROR') {
+                showToast(`API 오류: ${data.response.error?.text || '검색 실패'}`);
+                setIsSearching(false);
+                return;
+            }
+
             const result = data.response?.result?.items?.[0];
 
             if (result && result.point) {
                 const newLng = parseFloat(result.point.x);
                 const newLat = parseFloat(result.point.y);
-                const placeName = result.title || searchQuery;
 
-                // 현재 활성화된 슬롯의 정보 업데이트
+                const addressObj = result.address || {};
+                const fullAddress = addressObj.parcel || addressObj.road || result.title || searchQuery;
+
+                // 주소 문자열에서 '시' 또는 '군' 단위까지만 추출 (예: "경기도 고양시 덕양구 ..." -> "고양시")
+                const extractRegionName = (addr: string) => {
+                    const tokens = addr.split(' ');
+                    let cityOrCounty = '';
+
+                    for (const token of tokens) {
+                        // '시' 또는 '군'으로 끝나는 단어를 찾으면 거기가 행정구역 기준
+                        if (token.endsWith('시') || token.endsWith('군')) {
+                            cityOrCounty = token;
+                            break; // 시나 군을 찾으면 바로 확정
+                        }
+                    }
+
+                    // 만약 '시/군'을 못 찾았다면 첫 번째 토큰이나 기존 검색어 사용
+                    return cityOrCounty || searchQuery;
+                };
+
+                const regionName = extractRegionName(fullAddress);
+
                 const updatedSlot: RegionSlot = {
                     ...activeSlot,
-                    name: placeName,
+                    name: regionName,
                     lat: newLat,
                     lng: newLng,
                 };
@@ -105,9 +133,9 @@ export default function Home() {
                 setSlots((prev) => prev.map((s) => (s.id === activeSlot.id ? updatedSlot : s)));
                 setActiveSlot(updatedSlot);
                 setSearchQuery('');
-                showToast(`[${activeSlot.id} 슬롯] '${placeName}'(으)로 이동했습니다.`);
+                showToast(`[${activeSlot.id} 슬롯] '${regionName}'(으)로 설정되었습니다.`);
             } else {
-                showToast('검색 결과가 없습니다. 다른 검색어를 입력해 보세요.');
+                showToast('해당 지역 검색 결과가 없습니다. 올바른 시·군·구 명칭을 입력해 보세요.');
             }
         } catch (error) {
             console.error('VWorld Geocoding API Error:', error);

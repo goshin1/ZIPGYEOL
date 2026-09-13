@@ -72,7 +72,6 @@ export default function VWorldMap({ activeSlot, slots, onSelectSlot, onFacilitie
     const [facilities, setFacilities] = useState<any[]>([]);
     const [selectedFeature, setSelectedFeature] = useState<any>(null);
     const [layers, setLayers] = useState<LayerToggle[]>([
-        { id: 'APT', label: '아파트', icon: Building2, enabled: true, color: '#2563eb' },
         { id: 'PARK', label: '공원', icon: Trees, enabled: true, color: '#16a34a' },
         { id: 'GOV', label: '공공기관', icon: Landmark, enabled: true, color: '#9333ea' },
         { id: 'SCHOOL', label: '학교', icon: School, enabled: false, color: '#ea580c' },
