@@ -61,7 +61,7 @@ const CATEGORY_MAP: Record<string, { label: string; icon: any; color: string }> 
     },
 };
 
-// 💡 테마별 Recharts 툴팁 공통 스타일 설정 헬퍼
+//  테마별 Recharts 툴팁 공통 스타일 설정 헬퍼
 const customTooltipStyle = {
     backgroundColor: 'var(--tooltip-bg, #ffffff)',
     borderRadius: '10px',

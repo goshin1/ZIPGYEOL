@@ -79,7 +79,7 @@ export default function Home() {
         const apiKey = process.env.NEXT_PUBLIC_VWORLD_API_KEY;
 
         try {
-            // 💡 category=PARCEL (지번 주소) 또는 ROAD (도로명 주소) 파라미터 추가
+            //  category=PARCEL (지번 주소) 또는 ROAD (도로명 주소) 파라미터 추가
             const response = await fetch(
                 `/geocoding?service=search&request=search&version=2.0&crs=EPSG:4326&size=1&page=1&query=${encodeURIComponent(
                     searchQuery
