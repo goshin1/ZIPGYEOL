@@ -14,7 +14,8 @@ import Overlay from 'ol/Overlay';
 import { fromLonLat, toLonLat } from 'ol/proj';
 import { Style, Fill, Stroke, Text, Icon } from 'ol/style';
 import { supabase } from '@/lib/supabase';
-import { Building2, Trees, Landmark, School, Hospital, Train, Store, X } from 'lucide-react';
+// 💡 ChevronUp, ChevronDown 아이콘 추가
+import { Building2, Trees, Landmark, School, Hospital, Train, Store, X, Pill, ChevronUp, ChevronDown } from 'lucide-react';
 import { RegionSlot } from "@/app/page";
 import { FacilityItem } from "@/lib/calculator";
 
@@ -41,6 +42,7 @@ const ICON_SVG_PATHS: Record<string, string> = {
     HOSPITAL: '<path d="M12 6v12M6 12h12"/><rect width="18" height="18" x="3" y="3" rx="2"/>',
     SUBWAY: '<rect width="16" height="16" x="4" y="3" rx="2"/><path d="M4 11h16M12 3v8M8 19l-3 3M16 19l3 3M9 15h.01M15 15h.01"/>',
     STORE: '<path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/>',
+    PHARMACY: '<path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/>',
 };
 
 const createCustomMarkerSvg = (color: string, type: string) => {
@@ -71,13 +73,15 @@ export default function VWorldMap({ activeSlot, slots, onSelectSlot, onFacilitie
 
     const [facilities, setFacilities] = useState<any[]>([]);
     const [selectedFeature, setSelectedFeature] = useState<any>(null);
+
+    // 💡 레이어 패널 열림/닫힘 상태 추가
+    const [isLayerOpen, setIsLayerOpen] = useState<boolean>(true);
+
     const [layers, setLayers] = useState<LayerToggle[]>([
         { id: 'PARK', label: '공원', icon: Trees, enabled: true, color: '#16a34a' },
-        { id: 'GOV', label: '공공기관', icon: Landmark, enabled: true, color: '#9333ea' },
-        { id: 'SCHOOL', label: '학교', icon: School, enabled: false, color: '#ea580c' },
         { id: 'HOSPITAL', label: '병원', icon: Hospital, enabled: true, color: '#dc2626' },
+        { id: 'PHARMACY', label: '약국', icon: Pill, enabled: true, color: '#ec4899' },
         { id: 'SUBWAY', label: '지하철/교통', icon: Train, enabled: true, color: '#0284c7' },
-        { id: 'STORE', label: '편의시설', icon: Store, enabled: false, color: '#ca8a04' },
     ]);
 
     const fetchNearbyFacilities = useCallback(async (lat: number, lng: number) => {
@@ -117,7 +121,7 @@ export default function VWorldMap({ activeSlot, slots, onSelectSlot, onFacilitie
         overlayRef.current = overlay;
 
         const vworldBaseLayer = new TileLayer({
-            className: 'vworld-tile-layer', // 타일 레이어 전용 클래스 부여
+            className: 'vworld-tile-layer',
             source: new XYZ({
                 url: `https://api.vworld.kr/req/wmts/1.0.0/${apiKey}/Base/{z}/{y}/{x}.png`,
                 crossOrigin: 'anonymous',
@@ -243,26 +247,26 @@ export default function VWorldMap({ activeSlot, slots, onSelectSlot, onFacilitie
         );
     };
 
+    // 💡 선택된 피처의 영어 타입을 한글로 변환하기 위한 헬퍼 함수
+    const getKoreanLayerLabel = (typeId: string) => {
+        const layer = layers.find(l => l.id === typeId);
+        return layer ? layer.label : typeId;
+    };
+
     return (
         <div className="relative w-full h-full overflow-hidden">
-            {/*
-              CSS 스타일 추가:
-              mapContainer 전체에 invert를 걸지 않고, 오직 VWorld 지도 타일(.vworld-tile-layer)에만 다크모드 반전을 적용합니다.
-              이를 통해 OpenLayers가 상위 컨테이너로 이동시킨 Overlay DOM이 반전 필터에 휩쓸리지 않습니다.
-            */}
             <style jsx global>{`
                 .dark .vworld-tile-layer {
                     filter: invert(0.95) hue-rotate(350deg) brightness(1) !important;
                 }
             `}</style>
 
-            {/* 지도 Container (여기에는 invert 필터를 걸지 않습니다) */}
             <div
                 ref={mapRef}
                 className="w-full h-full bg-slate-100 dark:bg-slate-950 transition-colors duration-300"
             />
 
-            {/* 1. 마커 클릭 팝업 오버레이 (정상적으로 다크/화이트 테마 클래스가 반영됨) */}
+            {/* 1. 마커 클릭 팝업 오버레이 */}
             <div
                 ref={popupRef}
                 className={`z-30 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-3.5 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 transition-none ${
@@ -280,8 +284,9 @@ export default function VWorldMap({ activeSlot, slots, onSelectSlot, onFacilitie
                         >
                             <X className="w-3.5 h-3.5" />
                         </button>
-                        <div className="text-[10px] text-blue-600 dark:text-blue-400 font-bold tracking-wider uppercase">
-                            {selectedFeature.type}
+                        {/* 💡 영문 ID 대신 한글 label 렌더링 */}
+                        <div className="text-[10px] text-blue-600 dark:text-blue-400 font-bold tracking-wider">
+                            {getKoreanLayerLabel(selectedFeature.type)}
                         </div>
                         <div className="font-bold text-slate-900 dark:text-white text-sm leading-tight">
                             {selectedFeature.name}
@@ -320,30 +325,45 @@ export default function VWorldMap({ activeSlot, slots, onSelectSlot, onFacilitie
                 </div>
             </div>
 
-            {/* 3. 좌측 레이어 토글 패널 */}
-            <div className="absolute top-20 left-4 z-10 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md p-3 rounded-xl shadow-lg border border-slate-200 dark:border-slate-800 w-44">
-                <h3 className="text-xs font-bold text-slate-700 dark:text-slate-200 mb-2.5">주변 환경 레이어</h3>
-                <div className="space-y-2">
-                    {layers.map((layer) => {
-                        const IconComponent = layer.icon;
-                        return (
-                            <div key={layer.id} className="flex items-center justify-between text-xs">
-                                <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 font-medium">
-                                    <IconComponent className="w-3.5 h-3.5" style={{ color: layer.color }} />
-                                    <span>{layer.label}</span>
-                                </div>
-                                <button
-                                    onClick={() => toggleLayer(layer.id)}
-                                    className={`w-8 h-4 flex items-center rounded-full p-0.5 transition-colors duration-200 ${
-                                        layer.enabled ? 'bg-blue-600 justify-end' : 'bg-slate-300 dark:bg-slate-700 justify-start'
-                                    }`}
-                                >
-                                    <span className="w-3 h-3 bg-white dark:bg-slate-200 rounded-full shadow-md" />
-                                </button>
-                            </div>
-                        );
-                    })}
-                </div>
+            {/* 3. 좌측 레이어 토글 패널 (💡 접기/펴기 기능 추가) */}
+            <div className="absolute top-20 left-4 z-10 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md rounded-xl shadow-lg border border-slate-200 dark:border-slate-800 w-44 overflow-hidden">
+                <button
+                    onClick={() => setIsLayerOpen(!isLayerOpen)}
+                    className="w-full flex items-center justify-between p-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                >
+                    <h3 className="text-xs font-bold text-slate-700 dark:text-slate-200">주변 환경 레이어</h3>
+                    {isLayerOpen ? (
+                        <ChevronUp className="w-4 h-4 text-slate-500" />
+                    ) : (
+                        <ChevronDown className="w-4 h-4 text-slate-500" />
+                    )}
+                </button>
+
+                {isLayerOpen && (
+                    <div className="p-3 pt-0 space-y-2 border-t border-slate-100 dark:border-slate-800 mt-1 pb-3">
+                        <div className="pt-2 space-y-2">
+                            {layers.map((layer) => {
+                                const IconComponent = layer.icon;
+                                return (
+                                    <div key={layer.id} className="flex items-center justify-between text-xs">
+                                        <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 font-medium">
+                                            <IconComponent className="w-3.5 h-3.5" style={{ color: layer.color }} />
+                                            <span>{layer.label}</span>
+                                        </div>
+                                        <button
+                                            onClick={() => toggleLayer(layer.id)}
+                                            className={`w-8 h-4 flex items-center rounded-full p-0.5 transition-colors duration-200 ${
+                                                layer.enabled ? 'bg-blue-600 justify-end' : 'bg-slate-300 dark:bg-slate-700 justify-start'
+                                            }`}
+                                        >
+                                            <span className="w-3 h-3 bg-white dark:bg-slate-200 rounded-full shadow-md" />
+                                        </button>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
