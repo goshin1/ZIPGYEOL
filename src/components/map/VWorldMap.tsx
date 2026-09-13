@@ -134,6 +134,7 @@ export default function VWorldMap({ activeSlot, slots, onSelectSlot, onFacilitie
             target: mapRef.current,
             layers: [vworldBaseLayer, markerVectorLayer],
             overlays: [overlay],
+            controls: [],
             view: new View({
                 center: fromLonLat(initialCenter),
                 zoom: 14,
