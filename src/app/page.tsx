@@ -1,3 +1,4 @@
+// app/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -38,9 +39,9 @@ export default function Home() {
 
     // A/B/C 비교 슬롯 전역 상태
     const [slots, setSlots] = useState<RegionSlot[]>([
-        { id: 'A', name: '서울역', lat: 37.5561, lng: 126.9723, color: '#2563eb' },
-        { id: 'B', name: '명동역', lat: 37.5609, lng: 126.9863, color: '#9333ea' },
-        { id: 'C', name: '가평 참전비공원', lat: 37.8257, lng: 127.5163, color: '#10b981' },
+        { id: 'A', name: '강남구', lat: 37.5172, lng: 127.0473, color: '#2563eb' },
+        { id: 'B', name: '마포구', lat: 37.5663, lng: 126.9014, color: '#9333ea' },
+        { id: 'C', name: '송파구', lat: 37.5145, lng: 127.1059, color: '#10b981' },
     ]);
 
     // 슬롯별 독립적인 주변 시설 목록 관리 ({ A: [], B: [], C: [] })
@@ -79,7 +80,6 @@ export default function Home() {
         const apiKey = process.env.NEXT_PUBLIC_VWORLD_API_KEY;
 
         try {
-            //  category=PARCEL (지번 주소) 또는 ROAD (도로명 주소) 파라미터 추가
             const response = await fetch(
                 `/geocoding?service=search&request=search&version=2.0&crs=EPSG:4326&size=1&page=1&query=${encodeURIComponent(
                     searchQuery
@@ -88,7 +88,6 @@ export default function Home() {
 
             const data = await response.json();
 
-            // API 응답 구조 체크
             if (data.response?.status === 'ERROR') {
                 showToast(`API 오류: ${data.response.error?.text || '검색 실패'}`);
                 setIsSearching(false);
@@ -104,20 +103,16 @@ export default function Home() {
                 const addressObj = result.address || {};
                 const fullAddress = addressObj.parcel || addressObj.road || result.title || searchQuery;
 
-                // 주소 문자열에서 '시' 또는 '군' 단위까지만 추출 (예: "경기도 고양시 덕양구 ..." -> "고양시")
                 const extractRegionName = (addr: string) => {
                     const tokens = addr.split(' ');
                     let cityOrCounty = '';
 
                     for (const token of tokens) {
-                        // '시' 또는 '군'으로 끝나는 단어를 찾으면 거기가 행정구역 기준
                         if (token.endsWith('시') || token.endsWith('군')) {
                             cityOrCounty = token;
-                            break; // 시나 군을 찾으면 바로 확정
+                            break;
                         }
                     }
-
-                    // 만약 '시/군'을 못 찾았다면 첫 번째 토큰이나 기존 검색어 사용
                     return cityOrCounty || searchQuery;
                 };
 
@@ -148,7 +143,7 @@ export default function Home() {
     // 선택한 지역 이동
     const handleSelectSlot = (slot: RegionSlot) => {
         setActiveSlot(slot);
-        if (mobileTab === 'compare') setMobileTab('map'); // 모바일에서 선택 시 지도로 전환
+        if (mobileTab === 'compare') setMobileTab('map');
     };
 
     // 테마 변경 함수
@@ -189,35 +184,35 @@ export default function Home() {
             )}
 
             {/* 1. 상단 네비게이션 헤더 */}
-            <header className="h-14 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 md:px-6 flex items-center justify-between shrink-0 z-20 transition-colors">
-                <div className="flex items-center gap-2">
-                    <span className="text-lg md:text-xl font-black tracking-tight text-blue-600 dark:text-blue-400">ZIPGyeol</span>
-                    <span className="text-xs md:text-base font-bold text-slate-800 dark:text-slate-200">주거환경 비교</span>
-                    <span className="text-[10px] bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded-full font-bold">
-                        Beta
-                    </span>
+            <header className="w-full h-14 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 flex items-center justify-between shrink-0 z-20">
+                {/* 로고 영역 */}
+                <div className="flex items-center gap-2 shrink-0">
+                    <span className="font-extrabold text-blue-600 dark:text-blue-400 text-base sm:text-lg">ZIPGyeol</span>
+                    <span className="text-[10px] px-1.5 py-0.5 bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 rounded-md font-semibold">Beta</span>
                 </div>
 
-                {/* VWorld 장소 검색 폼 */}
-                <form onSubmit={handleSearch} className="relative w-44 sm:w-64 md:w-[450px]">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
-                    <input
-                        type="text"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder={`[${activeSlot.id} 슬롯] 장소/주소 검색 (예: 강남역, 역삼동)`}
-                        disabled={isSearching}
-                        className="w-full px-4 py-2 text-sm indent-3 text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-800 placeholder-slate-400 dark:placeholder-slate-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all disabled:opacity-50 border border-transparent dark:border-slate-700"
-                    />
+                {/* 💡 검색바 영역 (복원됨) */}
+                <form onSubmit={handleSearch} className="flex-1 max-w-md mx-2 sm:mx-4">
+                    <div className="relative flex items-center">
+                        <Search className="absolute left-3 w-4 h-4 text-slate-400 pointer-events-none" />
+                        <input
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            placeholder={`[${activeSlot.id} 슬롯] 장소/주소 검색 (예: 강남역, 역삼동)`}
+                            className="w-full h-9 pl-9 pr-4 bg-slate-100 dark:bg-slate-800 text-xs rounded-xl border border-transparent focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 outline-none transition-all placeholder:text-slate-400"
+                        />
+                    </div>
                 </form>
 
-                <div className="hidden md:flex items-center gap-3">
+                {/* 우측 유틸리티 영역 (테마 스위치) */}
+                <div className="flex items-center gap-2 shrink-0">
                     <button
                         onClick={toggleDarkMode}
+                        aria-label="테마 변경"
                         className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
-                        aria-label="Toggle Theme"
                     >
-                        {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
+                        {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
                     </button>
                 </div>
             </header>
@@ -260,7 +255,7 @@ export default function Home() {
                         </div>
                     </div>
 
-                    {/* 하단 상세 정보 패널 - 현재 활성화된 슬롯의 시설 데이터 연동 */}
+                    {/* 하단 상세 정보 패널 */}
                     <RegionDetailSection
                         activeSlotName={activeSlot.name}
                         facilities={slotFacilities[activeSlot.id] || []}
@@ -268,7 +263,7 @@ export default function Home() {
                     />
                 </div>
 
-                {/* [우측] 비교 분석 패널 - A/B/C 전체 슬롯의 시설 데이터 Map 전달 */}
+                {/* [우측] 비교 분석 패널 */}
                 <aside className={`${mobileTab === 'compare' ? 'flex flex-1 w-full' : 'hidden md:block md:w-[380px]'} shrink-0 h-full overflow-hidden bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 transition-colors`}>
                     <AnalysisPanel
                         slotFacilities={slotFacilities}

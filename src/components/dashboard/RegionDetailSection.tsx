@@ -61,16 +61,6 @@ const CATEGORY_MAP: Record<string, { label: string; icon: any; color: string }> 
     },
 };
 
-//  테마별 Recharts 툴팁 공통 스타일 설정 헬퍼
-const customTooltipStyle = {
-    backgroundColor: 'var(--tooltip-bg, #ffffff)',
-    borderRadius: '10px',
-    borderColor: 'var(--tooltip-border, #cbd5e1)',
-    color: 'var(--tooltip-text, #0f172a)',
-    fontSize: '11px',
-    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-};
-
 export default function RegionDetailSection({ activeSlotName, facilities, mobileTab }: RegionDetailProps) {
     const [subView, setSubView] = useState<'facility' | 'population' | 'realestate'>('facility');
     const [selectedCategory, setSelectedCategory] = useState<string>('PARK');
@@ -175,53 +165,56 @@ export default function RegionDetailSection({ activeSlotName, facilities, mobile
         <div className={`w-full bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 p-3 sm:p-4 flex flex-col gap-3 shrink-0 transition-colors ${
             mobileTab === 'details' ? 'flex flex-1 min-h-0 overflow-y-auto' : 'hidden md:flex'
         }`}>
-            {/* 상단 탭 헤더 (모바일 풀폭 대응) */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                <div>
-                    <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                        <span>선택 지역 상세 분석</span>
-                        <span className="text-xs font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded-full border border-blue-200 dark:border-blue-800">
-                            {activeSlotName}
-                        </span>
-                    </h2>
-                    <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400">
-                        인프라 환경, 연령별 인구 분포 및 2022~2026년 주택 유형별 매매 실거래가 추이 리포트입니다.
-                    </p>
+            {/* 💡 상단 탭 헤더: 모바일에서 버튼들이 아래로 자연스럽게 내려오도록(wrap) 구조 개선 */}
+            <div className="flex flex-col gap-3">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                    <div>
+                        <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                            <span>선택 지역 상세 분석</span>
+                            <span className="text-xs font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded-full border border-blue-200 dark:border-blue-800">
+                                {activeSlotName}
+                            </span>
+                        </h2>
+                        <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400">
+                            인프라 환경, 연령별 인구 분포 및 2022~2026년 주택 유형별 매매 실거래가 추이 리포트입니다.
+                        </p>
+                    </div>
                 </div>
 
-                <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 w-full sm:w-auto justify-between sm:justify-start">
+                {/* 💡 버튼 그룹: 모바일 화면에서 공간 부족 시 줄바꿈(`flex-wrap`) 및 전체 너비(`w-full`) 적용 */}
+                <div className="flex flex-wrap items-center gap-1.5 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 w-full">
                     <button
                         onClick={() => setSubView('facility')}
-                        className={`flex-1 sm:flex-none px-3 py-1 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1 ${
+                        className={`flex-1 min-w-[100px] px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1 ${
                             subView === 'facility'
                                 ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
                                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                         }`}
                     >
-                        <BarChart3 className="w-3.5 h-3.5" />
-                        인프라 분석
+                        <BarChart3 className="w-3.5 h-3.5 shrink-0" />
+                        <span>인프라 분석</span>
                     </button>
                     <button
                         onClick={() => setSubView('population')}
-                        className={`flex-1 sm:flex-none px-3 py-1 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1 ${
+                        className={`flex-1 min-w-[90px] px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1 ${
                             subView === 'population'
                                 ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
                                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                         }`}
                     >
-                        <Users className="w-3.5 h-3.5" />
-                        인구 구조
+                        <Users className="w-3.5 h-3.5 shrink-0" />
+                        <span>인구 구조</span>
                     </button>
                     <button
                         onClick={() => setSubView('realestate')}
-                        className={`flex-1 sm:flex-none px-3 py-1 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1 ${
+                        className={`flex-1 min-w-[110px] px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1 ${
                             subView === 'realestate'
                                 ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
                                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                         }`}
                     >
-                        <Home className="w-3.5 h-3.5" />
-                        부동산 실거래가
+                        <Home className="w-3.5 h-3.5 shrink-0" />
+                        <span>부동산 실거래가</span>
                     </button>
                 </div>
             </div>
@@ -297,7 +290,7 @@ export default function RegionDetailSection({ activeSlotName, facilities, mobile
                             </div>
                         </div>
 
-                        {/* 생활권 입지 종합 점수 카드 (1번 산출 방식 설명 및 툴팁 테마 연동 포함) */}
+                        {/* 생활권 입지 종합 점수 카드 */}
                         <div className="bg-white dark:bg-slate-800/50 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between h-[210px] transition-colors">
                             <div className="flex items-center justify-between">
                                 <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200">생활권 입지 종합 점수</h3>
