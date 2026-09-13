@@ -286,12 +286,12 @@ export default function AnalysisPanel({
                     </h4>
                     <span className="text-[10px] text-slate-400">최신 거래순</span>
                 </div>
-
                 <div className="flex-1 min-h-0 overflow-y-auto space-y-1.5 pr-1">
                     {priceTrendData && priceTrendData.length > 0 ? (
                         priceTrendData.slice(-5).reverse().map((item, index) => {
-                            const priceVal = (item as any).avg_price ?? Object.values(item)[1] ?? 0;
-                            const dateVal = (item as any).deal_year_month ?? item.year ?? '최근';
+                            // 현재 더미 데이터에서 A, B, C 슬롯 중 현재 활성화된 슬롯의 값을 가져옵니다.
+                            const priceVal = (item as any)[activeSlot.name] ?? 0;
+                            const dateVal = (item as any).year ?? '최근';
 
                             return (
                                 <div
@@ -303,14 +303,13 @@ export default function AnalysisPanel({
                                             {activeSlot.name} 평균 실거래가
                                         </div>
                                         <div className="text-[10px] text-slate-500">
-                                            계약월: {dateVal}
+                                            기준년도: {dateVal}년
                                         </div>
                                     </div>
                                     <div className="text-right">
+                                        {/* 더미 데이터(15.0 등)가 이미 '억' 단위이므로 바로 '억원'을 붙여줍니다 */}
                                         <div className="font-bold text-blue-600 dark:text-blue-400">
-                                            {Number(priceVal) >= 10000
-                                                ? `${(Number(priceVal) / 10000).toFixed(2)}억원`
-                                                : `${Number(priceVal).toLocaleString()}만원`}
+                                            {Number(priceVal).toFixed(1)}억원
                                         </div>
                                     </div>
                                 </div>

@@ -326,7 +326,7 @@ export default function VWorldMap({ activeSlot, slots, onSelectSlot, onFacilitie
             </div>
 
             {/* 3. 좌측 레이어 토글 패널 (💡 접기/펴기 기능 추가) */}
-            <div className="absolute top-20 left-4 z-10 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md rounded-xl shadow-lg border border-slate-200 dark:border-slate-800 w-44 overflow-hidden">
+            <div className="absolute top-20 left-4 transition-all z-10 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md rounded-xl shadow-lg border border-slate-200 dark:border-slate-800 w-44 overflow-hidden">
                 <button
                     onClick={() => setIsLayerOpen(!isLayerOpen)}
                     className="w-full flex items-center justify-between p-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
