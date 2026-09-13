@@ -1,3 +1,4 @@
+// RegionDetailSection.tsx
 'use client';
 
 import { useMemo, useState, useEffect } from 'react';
@@ -22,7 +23,7 @@ import { FacilityItem } from "@/lib/calculator";
 import { supabase } from '@/lib/supabase';
 
 interface RegionDetailProps {
-    activeSlotName: string; // 주의: 이 값이 '서울역' 같은 시설명이 될 수 있음
+    activeSlotName: string;
     facilities: FacilityItem[];
     mobileTab: string;
 }
@@ -60,6 +61,16 @@ const CATEGORY_MAP: Record<string, { label: string; icon: any; color: string }> 
     },
 };
 
+// 💡 테마별 Recharts 툴팁 공통 스타일 설정 헬퍼
+const customTooltipStyle = {
+    backgroundColor: 'var(--tooltip-bg, #ffffff)',
+    borderRadius: '10px',
+    borderColor: 'var(--tooltip-border, #cbd5e1)',
+    color: 'var(--tooltip-text, #0f172a)',
+    fontSize: '11px',
+    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+};
+
 export default function RegionDetailSection({ activeSlotName, facilities, mobileTab }: RegionDetailProps) {
     const [subView, setSubView] = useState<'facility' | 'population' | 'realestate'>('facility');
     const [selectedCategory, setSelectedCategory] = useState<string>('PARK');
@@ -72,19 +83,13 @@ export default function RegionDetailSection({ activeSlotName, facilities, mobile
     const [loadingRealEstate, setLoadingRealEstate] = useState<boolean>(false);
 
     const targetQuery = useMemo(() => {
-        // 만약 activeSlotName이 '서울역'처럼 역 이름 형태라면 정제하거나,
-        // 보통 슬롯 선택 시 해당 지역의 시군구 이름이 들어와야 합니다.
-        // 예시로 '역'으로 끝나면 앞글자만 쓰거나 기본 지역구 매핑을 고려할 수 있습니다.
         let name = activeSlotName || '';
         if (name.endsWith('역')) {
-            // 지하철역 이름인 경우, 실제 DB에 있는 시/구/동 단위로 매핑이 필요할 수 있음
-            // 테스트를 위해 '역'을 떼어내거나 기본 검색어로 변환
             name = name.replace('역', '');
         }
         return name;
     }, [activeSlotName]);
 
-    // 1. 카테고리별 시설 개수 집계
     const counts = useMemo(() => {
         const acc: Record<string, number> = {
             PARK: 0, GOV: 0, SCHOOL: 0, HOSPITAL: 0, SUBWAY: 0, STORE: 0,
@@ -97,7 +102,6 @@ export default function RegionDetailSection({ activeSlotName, facilities, mobile
         return acc;
     }, [facilities]);
 
-    // 2. 생활권 종합 점수 계산
     const radarData = useMemo(() => {
         const calcScore = (count: number, maxExpected: number = 10) =>
             Math.min(100, Math.round((count / maxExpected) * 100));
@@ -117,12 +121,9 @@ export default function RegionDetailSection({ activeSlotName, facilities, mobile
             .sort((a, b) => (a.distance_meters || 0) - (b.distance_meters || 0));
     }, [facilities, selectedCategory]);
 
-    // 3. 인구 데이터 Fetch 시 targetQuery 전체를 그대로 전달
     useEffect(() => {
         async function fetchPopulation() {
             if (!targetQuery) return;
-
-            // 기존 .pop()으로 자르던 로직 제거 -> targetQuery 그대로 전달
             const { data, error } = await supabase.rpc('get_population_by_region', {
                 region_name: targetQuery
             });
@@ -150,14 +151,13 @@ export default function RegionDetailSection({ activeSlotName, facilities, mobile
         fetchPopulation();
     }, [targetQuery]);
 
-    // 4. 부동산 실거래가 추이 Fetch 시 targetQuery 그대로 전달
     useEffect(() => {
         async function fetchRealEstate() {
             if (!targetQuery) return;
             setLoadingRealEstate(true);
 
             const { data, error } = await supabase.rpc('get_real_estate_trends', {
-                sigungu_input: targetQuery, // 전체 이름 전달
+                sigungu_input: targetQuery,
                 housing_type_input: selectedHousingType
             });
 
@@ -172,27 +172,27 @@ export default function RegionDetailSection({ activeSlotName, facilities, mobile
     }, [targetQuery, selectedHousingType]);
 
     return (
-        <div className={`bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 p-4 flex-col gap-3 shrink-0 transition-colors ${
-            mobileTab === 'details' ? 'flex flex-1' : 'hidden md:flex'
+        <div className={`w-full bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 p-3 sm:p-4 flex flex-col gap-3 shrink-0 transition-colors ${
+            mobileTab === 'details' ? 'flex flex-1 min-h-0 overflow-y-auto' : 'hidden md:flex'
         }`}>
-            {/* 상단 탭 헤더 */}
+            {/* 상단 탭 헤더 (모바일 풀폭 대응) */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                 <div>
-                    <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
                         <span>선택 지역 상세 분석</span>
                         <span className="text-xs font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded-full border border-blue-200 dark:border-blue-800">
                             {activeSlotName}
                         </span>
                     </h2>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                    <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400">
                         인프라 환경, 연령별 인구 분포 및 2022~2026년 주택 유형별 매매 실거래가 추이 리포트입니다.
                     </p>
                 </div>
 
-                <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
+                <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 w-full sm:w-auto justify-between sm:justify-start">
                     <button
                         onClick={() => setSubView('facility')}
-                        className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 ${
+                        className={`flex-1 sm:flex-none px-3 py-1 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1 ${
                             subView === 'facility'
                                 ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
                                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -203,7 +203,7 @@ export default function RegionDetailSection({ activeSlotName, facilities, mobile
                     </button>
                     <button
                         onClick={() => setSubView('population')}
-                        className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 ${
+                        className={`flex-1 sm:flex-none px-3 py-1 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1 ${
                             subView === 'population'
                                 ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
                                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -214,7 +214,7 @@ export default function RegionDetailSection({ activeSlotName, facilities, mobile
                     </button>
                     <button
                         onClick={() => setSubView('realestate')}
-                        className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 ${
+                        className={`flex-1 sm:flex-none px-3 py-1 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1 ${
                             subView === 'realestate'
                                 ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
                                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -246,6 +246,7 @@ export default function RegionDetailSection({ activeSlotName, facilities, mobile
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {/* 시설 목록 카드 */}
                         <div className="bg-white dark:bg-slate-800/50 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between h-[210px] transition-colors">
                             <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 mb-2 flex items-center justify-between">
                                 <span>{CATEGORY_MAP[selectedCategory]?.label} 목록</span>
@@ -274,6 +275,7 @@ export default function RegionDetailSection({ activeSlotName, facilities, mobile
                             </div>
                         </div>
 
+                        {/* 주변 인프라 분포 카드 */}
                         <div className="bg-white dark:bg-slate-800/50 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between h-[210px] transition-colors">
                             <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 mb-2">주변 인프라 분포</h3>
                             <div className="grid grid-cols-2 gap-1.5 my-auto">
@@ -295,9 +297,15 @@ export default function RegionDetailSection({ activeSlotName, facilities, mobile
                             </div>
                         </div>
 
-                        <div className="bg-white dark:bg-slate-800/50 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col items-center justify-between h-[210px] transition-colors">
-                            <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 w-full text-left">생활권 입지 종합 점수</h3>
-                            <div className="w-full h-36">
+                        {/* 생활권 입지 종합 점수 카드 (1번 산출 방식 설명 및 툴팁 테마 연동 포함) */}
+                        <div className="bg-white dark:bg-slate-800/50 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between h-[210px] transition-colors">
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200">생활권 입지 종합 점수</h3>
+                                <span className="text-[10px] text-slate-400 dark:text-slate-500" title="기준 최대 개수 대비 비율(100점 만점 정규화)">
+                                    ⓘ 산출 기준
+                                </span>
+                            </div>
+                            <div className="w-full h-28">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <RadarChart cx="50%" cy="50%" outerRadius="68%" data={radarData}>
                                         <PolarGrid className="stroke-slate-200 dark:stroke-slate-700" />
@@ -316,15 +324,18 @@ export default function RegionDetailSection({ activeSlotName, facilities, mobile
                                         />
                                         <Tooltip
                                             contentStyle={{
-                                                backgroundColor: '#0f172a',
+                                                backgroundColor: 'var(--tooltip-bg, #0f172a)',
                                                 borderRadius: '8px',
-                                                borderColor: '#334155',
-                                                color: '#ffffff',
+                                                borderColor: 'var(--tooltip-border, #334155)',
+                                                color: 'var(--tooltip-text, #ffffff)',
                                                 fontSize: '11px',
                                             }}
                                         />
                                     </RadarChart>
                                 </ResponsiveContainer>
+                            </div>
+                            <div className="text-[9px] text-slate-400 dark:text-slate-500 text-center pt-1 border-t border-slate-100 dark:border-slate-700/50">
+                                산출: (실제 시설 수 ÷ 기준 최대치) × 100
                             </div>
                         </div>
                     </div>
@@ -350,7 +361,13 @@ export default function RegionDetailSection({ activeSlotName, facilities, mobile
                                     <YAxis tick={{ fontSize: 10 }} tickFormatter={(val) => `${(val / 10000).toFixed(0)}만`} stroke="currentColor" className="text-slate-500" />
                                     <Tooltip
                                         formatter={(val: any) => [`${Number(val).toLocaleString()} 명`, '인구수']}
-                                        contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#fff', borderRadius: '8px', fontSize: '11px' }}
+                                        contentStyle={{
+                                            backgroundColor: 'var(--tooltip-bg, #0f172a)',
+                                            borderRadius: '8px',
+                                            borderColor: 'var(--tooltip-border, #334155)',
+                                            color: 'var(--tooltip-text, #ffffff)',
+                                            fontSize: '11px',
+                                        }}
                                     />
                                     <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} />
                                 </BarChart>
@@ -405,7 +422,13 @@ export default function RegionDetailSection({ activeSlotName, facilities, mobile
                                     <Tooltip
                                         formatter={(value: any) => [`${Number(value).toLocaleString()} 만원`, '평균 매매가']}
                                         labelFormatter={(label) => `계약년월: ${label}`}
-                                        contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#fff', borderRadius: '8px', fontSize: '11px' }}
+                                        contentStyle={{
+                                            backgroundColor: 'var(--tooltip-bg, #0f172a)',
+                                            borderRadius: '8px',
+                                            borderColor: 'var(--tooltip-border, #334155)',
+                                            color: 'var(--tooltip-text, #ffffff)',
+                                            fontSize: '11px',
+                                        }}
                                     />
                                     <Line
                                         type="monotone"

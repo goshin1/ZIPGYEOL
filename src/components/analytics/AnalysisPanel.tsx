@@ -179,10 +179,10 @@ export default function AnalysisPanel({
                                 <YAxis tick={{ fill: '#94a3b8', fontSize: 10 }} />
                                 <Tooltip
                                     contentStyle={{
-                                        backgroundColor: '#0f172a',
+                                        backgroundColor: 'var(--tooltip-bg, #0f172a)',
                                         borderRadius: '8px',
-                                        borderColor: '#334155',
-                                        color: '#ffffff',
+                                        borderColor: 'var(--tooltip-border, #334155)',
+                                        color: 'var(--tooltip-text, #ffffff)',
                                         fontSize: '11px',
                                     }}
                                 />
@@ -205,11 +205,15 @@ export default function AnalysisPanel({
 
             {/* 2. 입지 환경 다각도 레이더 차트 */}
             {selectedTab === 'radar' && (
-                <div className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200 dark:border-slate-800">
-                    <h3 className="text-xs font-bold mb-3 text-slate-700 dark:text-slate-300">
-                        3개 슬롯 입지 조건 다중 비교
-                    </h3>
-                    <div className="w-full h-52">
+                <div className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
+                    <div className="flex items-center justify-between mb-2">
+                        <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                            3개 슬롯 입지 조건 다중 비교
+                        </h3>
+                        <span className="text-[10px] text-slate-400">100점 만점 정규화</span>
+                    </div>
+
+                    <div className="w-full h-48">
                         <ResponsiveContainer width="100%" height="100%">
                             <RadarChart cx="50%" cy="50%" outerRadius="65%" data={radarData}>
                                 <PolarGrid className="stroke-slate-200 dark:stroke-slate-700/60" />
@@ -224,18 +228,23 @@ export default function AnalysisPanel({
                                         fillOpacity={activeSlot.id === slot.id ? 0.4 : 0.15}
                                     />
                                 ))}
-                                <Legend wrapperStyle={{ fontSize: '10px', paddingTop: '8px' }} />
+                                <Legend wrapperStyle={{ fontSize: '10px', paddingTop: '4px' }} />
                                 <Tooltip
                                     contentStyle={{
-                                        backgroundColor: '#0f172a',
+                                        backgroundColor: 'var(--tooltip-bg, #0f172a)',
                                         borderRadius: '8px',
-                                        borderColor: '#334155',
-                                        color: '#ffffff',
+                                        borderColor: 'var(--tooltip-border, #334155)',
+                                        color: 'var(--tooltip-text, #ffffff)',
                                         fontSize: '11px',
                                     }}
                                 />
                             </RadarChart>
                         </ResponsiveContainer>
+                    </div>
+
+                    {/* 💡 하단 점수 산출 방식 설명 추가 */}
+                    <div className="text-[10px] text-slate-400 dark:text-slate-500 text-center pt-2 mt-1 border-t border-slate-200 dark:border-slate-700/50">
+                        <strong>산출 방식</strong>: 각 카테고리별 기대 최대치(교통5, 공원8, 의료6, 교육8, 편의12) 대비 비율 환산
                     </div>
                 </div>
             )}
