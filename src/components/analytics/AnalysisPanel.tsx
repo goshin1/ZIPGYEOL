@@ -196,7 +196,7 @@ export default function AnalysisPanel({
             {/* 상단 차트 영역 (고정 크기 유지) */}
             <div className="shrink-0 mb-3">
                 {selectedTab === 'trend' && (
-                    <div className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200 dark:border-slate-800">
+                    <div className="p-3 h-60 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200 dark:border-slate-800">
                         <h3 className="text-xs font-bold mb-2 text-slate-700 dark:text-slate-300">
                             아파트 평균 매매가 추이 (최근 5년)
                         </h3>
@@ -233,7 +233,7 @@ export default function AnalysisPanel({
                 )}
 
                 {selectedTab === 'radar' && (
-                    <div className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
+                    <div className="p-3 h-60 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
                         <div className="flex items-center justify-between mb-1">
                             <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300">
                                 3개 슬롯 입지 조건 다중 비교

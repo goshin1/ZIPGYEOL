@@ -165,7 +165,7 @@ export default function RegionDetailSection({ activeSlotName, facilities, mobile
         <div className={`w-full bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 p-3 sm:p-4 flex flex-col gap-3 shrink-0 transition-colors ${
             mobileTab === 'details' ? 'flex flex-1 min-h-0 overflow-y-auto' : 'hidden md:flex'
         }`}>
-            {/* 💡 상단 탭 헤더: 모바일에서 버튼들이 아래로 자연스럽게 내려오도록(wrap) 구조 개선 */}
+            {/* 상단 탭 헤더 */}
             <div className="flex flex-col gap-3">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                     <div>
@@ -181,7 +181,7 @@ export default function RegionDetailSection({ activeSlotName, facilities, mobile
                     </div>
                 </div>
 
-                {/* 💡 버튼 그룹: 모바일 화면에서 공간 부족 시 줄바꿈(`flex-wrap`) 및 전체 너비(`w-full`) 적용 */}
+                {/* 버튼 그룹 */}
                 <div className="flex flex-wrap items-center gap-1.5 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 w-full">
                     <button
                         onClick={() => setSubView('facility')}
@@ -219,7 +219,7 @@ export default function RegionDetailSection({ activeSlotName, facilities, mobile
                 </div>
             </div>
 
-            {/* 콘텐츠 영역 */}
+            {/* 콘텐츠 영역: 모든 뷰의 기본 카드 높이를 h-[255px]로 넉넉하고 동일하게 고정하여 화면 떨림(들썩거림) 방지 */}
             {subView === 'facility' && (
                 <div className="flex flex-col gap-2">
                     <div className="flex flex-wrap gap-1">
@@ -240,7 +240,7 @@ export default function RegionDetailSection({ activeSlotName, facilities, mobile
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         {/* 시설 목록 카드 */}
-                        <div className="bg-white dark:bg-slate-800/50 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between h-[210px] transition-colors">
+                        <div className="bg-white dark:bg-slate-800/50 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between h-[255px] transition-colors">
                             <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 mb-2 flex items-center justify-between">
                                 <span>{CATEGORY_MAP[selectedCategory]?.label} 목록</span>
                                 <span className="text-[11px] text-slate-400 dark:text-slate-500 font-normal">거리순</span>
@@ -269,7 +269,7 @@ export default function RegionDetailSection({ activeSlotName, facilities, mobile
                         </div>
 
                         {/* 주변 인프라 분포 카드 */}
-                        <div className="bg-white dark:bg-slate-800/50 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between h-[210px] transition-colors">
+                        <div className="bg-white dark:bg-slate-800/50 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between h-[255px] transition-colors">
                             <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 mb-2">주변 인프라 분포</h3>
                             <div className="grid grid-cols-2 gap-1.5 my-auto">
                                 {Object.entries(CATEGORY_MAP).map(([key, config]) => {
@@ -291,16 +291,16 @@ export default function RegionDetailSection({ activeSlotName, facilities, mobile
                         </div>
 
                         {/* 생활권 입지 종합 점수 카드 */}
-                        <div className="bg-white dark:bg-slate-800/50 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between h-[210px] transition-colors">
+                        <div className="bg-white dark:bg-slate-800/50 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between h-[255px] transition-colors">
                             <div className="flex items-center justify-between">
                                 <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200">생활권 입지 종합 점수</h3>
                                 <span className="text-[10px] text-slate-400 dark:text-slate-500" title="기준 최대 개수 대비 비율(100점 만점 정규화)">
                                     ⓘ 산출 기준
                                 </span>
                             </div>
-                            <div className="w-full h-28">
+                            <div className="w-full h-32">
                                 <ResponsiveContainer width="100%" height="100%">
-                                    <RadarChart cx="50%" cy="50%" outerRadius="68%" data={radarData}>
+                                    <RadarChart cx="50%" cy="50%" outerRadius="72%" data={radarData}>
                                         <PolarGrid className="stroke-slate-200 dark:stroke-slate-700" />
                                         <PolarAngleAxis
                                             dataKey="subject"
@@ -336,7 +336,7 @@ export default function RegionDetailSection({ activeSlotName, facilities, mobile
             )}
 
             {subView === 'population' && (
-                <div className="bg-white dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col h-[230px] transition-colors">
+                <div className="bg-white dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col h-[255px] transition-colors">
                     <div className="flex items-center justify-between mb-2">
                         <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200">
                             연령대별 인구 분포 현황 ({targetQuery})
@@ -375,7 +375,7 @@ export default function RegionDetailSection({ activeSlotName, facilities, mobile
             )}
 
             {subView === 'realestate' && (
-                <div className="bg-white dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col h-[230px] transition-colors">
+                <div className="bg-white dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col h-[255px] transition-colors">
                     <div className="flex items-center justify-between mb-2">
                         <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200">
                             2022~2026 주택 유형별 매매 실거래가 추이 ({targetQuery})

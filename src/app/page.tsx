@@ -188,8 +188,7 @@ export default function Home() {
                 {/* 로고 영역 */}
                 <div className="flex items-center gap-2 shrink-0">
                     <span className="font-extrabold text-blue-600 dark:text-blue-400 text-base sm:text-lg">ZIPGyeol</span>
-                    <span className="text-[10px] px-1.5 py-0.5 bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 rounded-md font-semibold">Beta</span>
-                </div>
+                    </div>
 
                 {/* 💡 검색바 영역 (복원됨) */}
                 <form onSubmit={handleSearch} className="flex-1 max-w-md mx-2 sm:mx-4">
