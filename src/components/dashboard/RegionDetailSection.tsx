@@ -18,7 +18,7 @@ import {
     YAxis,
     CartesianGrid,
 } from 'recharts';
-import { Trees, Landmark, School, Hospital, Train, Store, Users, Home, BarChart3 } from 'lucide-react';
+import { Trees, Hospital, Train, Pill, Users, Home, BarChart3 } from 'lucide-react';
 import { FacilityItem } from "@/lib/calculator";
 import { supabase } from '@/lib/supabase';
 
@@ -34,30 +34,20 @@ const CATEGORY_MAP: Record<string, { label: string; icon: any; color: string }> 
         icon: Trees,
         color: 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/60'
     },
-    GOV: {
-        label: '공공기관',
-        icon: Landmark,
-        color: 'bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-800/60'
-    },
-    SCHOOL: {
-        label: '학교',
-        icon: School,
-        color: 'bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800/60'
-    },
     HOSPITAL: {
         label: '병원',
         icon: Hospital,
         color: 'bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800/60'
     },
     SUBWAY: {
-        label: '지하철/교통',
+        label: '지하철',
         icon: Train,
         color: 'bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 border-sky-200 dark:border-sky-800/60'
     },
-    STORE: {
-        label: '편의시설',
-        icon: Store,
-        color: 'bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800/60'
+    PHARMACY: {
+        label: '약국',
+        icon: Pill,
+        color: 'bg-teal-50 dark:bg-teal-950/40 text-teal-600 dark:text-teal-400 border-teal-200 dark:border-teal-800/60'
     },
 };
 
@@ -82,7 +72,10 @@ export default function RegionDetailSection({ activeSlotName, facilities, mobile
 
     const counts = useMemo(() => {
         const acc: Record<string, number> = {
-            PARK: 0, GOV: 0, SCHOOL: 0, HOSPITAL: 0, SUBWAY: 0, STORE: 0,
+            PARK: 0,
+            HOSPITAL: 0,
+            SUBWAY: 0,
+            PHARMACY: 0,
         };
         facilities.forEach((item) => {
             if (acc[item.facility_type] !== undefined) {
@@ -93,15 +86,14 @@ export default function RegionDetailSection({ activeSlotName, facilities, mobile
     }, [facilities]);
 
     const radarData = useMemo(() => {
-        const calcScore = (count: number, maxExpected: number = 10) =>
+        const calcScore = (count: number, maxExpected: number) =>
             Math.min(100, Math.round((count / maxExpected) * 100));
 
         return [
-            { subject: '교통 접근성', score: calcScore(counts.SUBWAY, 5) },
             { subject: '공원/녹지', score: calcScore(counts.PARK, 8) },
             { subject: '의료 시설', score: calcScore(counts.HOSPITAL, 6) },
-            { subject: '교육 환경', score: calcScore(counts.SCHOOL, 8) },
-            { subject: '편의 시설', score: calcScore(counts.STORE, 12) },
+            { subject: '약국 인프라', score: calcScore(counts.PHARMACY, 10) },
+            { subject: '교통 접근성', score: calcScore(counts.SUBWAY, 5) },
         ];
     }, [counts]);
 
@@ -176,7 +168,7 @@ export default function RegionDetailSection({ activeSlotName, facilities, mobile
                             </span>
                         </h2>
                         <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400">
-                            인프라 환경, 연령별 인구 분포 및 2022~2026년 주택 유형별 매매 실거래가 추이 리포트입니다.
+                            공원·약국·병원·지하철 인프라 환경, 연령별 인구 분포 및 2022~2026년 주택 유형별 매매 실거래가 추이 리포트입니다.
                         </p>
                     </div>
                 </div>
@@ -219,7 +211,7 @@ export default function RegionDetailSection({ activeSlotName, facilities, mobile
                 </div>
             </div>
 
-            {/* 콘텐츠 영역: 모든 뷰의 기본 카드 높이를 h-[255px]로 넉넉하고 동일하게 고정하여 화면 떨림(들썩거림) 방지 */}
+            {/* 콘텐츠 영역 */}
             {subView === 'facility' && (
                 <div className="flex flex-col gap-2">
                     <div className="flex flex-wrap gap-1">
@@ -268,7 +260,7 @@ export default function RegionDetailSection({ activeSlotName, facilities, mobile
                             </div>
                         </div>
 
-                        {/* 주변 인프라 분포 카드 */}
+                        {/* 4종 주변 인프라 분포 카드 */}
                         <div className="bg-white dark:bg-slate-800/50 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between h-[255px] transition-colors">
                             <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 mb-2">주변 인프라 분포</h3>
                             <div className="grid grid-cols-2 gap-1.5 my-auto">
@@ -290,10 +282,10 @@ export default function RegionDetailSection({ activeSlotName, facilities, mobile
                             </div>
                         </div>
 
-                        {/* 생활권 입지 종합 점수 카드 */}
+                        {/* 4종 인프라 종합 점수 카드 */}
                         <div className="bg-white dark:bg-slate-800/50 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between h-[255px] transition-colors">
                             <div className="flex items-center justify-between">
-                                <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200">생활권 입지 종합 점수</h3>
+                                <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200">4종 인프라 종합 점수</h3>
                                 <span className="text-[10px] text-slate-400 dark:text-slate-500" title="기준 최대 개수 대비 비율(100점 만점 정규화)">
                                     ⓘ 산출 기준
                                 </span>
@@ -328,7 +320,7 @@ export default function RegionDetailSection({ activeSlotName, facilities, mobile
                                 </ResponsiveContainer>
                             </div>
                             <div className="text-[9px] text-slate-400 dark:text-slate-500 text-center pt-1 border-t border-slate-100 dark:border-slate-700/50">
-                                산출: (실제 시설 수 ÷ 기준 최대치) × 100
+                                공원·약국·병원·지하철 시설 수를 기준 최대치 대비 100점으로 환산
                             </div>
                         </div>
                     </div>

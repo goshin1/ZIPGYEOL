@@ -59,12 +59,12 @@ export default function AnalysisPanel({
         ];
     }, [slots]);
 
-    // 2. A, B, C 각 슬롯별 시설 개수 개별 집계
+    // 2. A, B, C 각 슬롯별 시설 개수 개별 집계 (학교, 편의시설 제거 / 약국 추가)
     const slotCounts = useMemo(() => {
         const result: Record<'A' | 'B' | 'C', Record<string, number>> = {
-            A: { SUBWAY: 0, PARK: 0, HOSPITAL: 0, SCHOOL: 0, STORE: 0 },
-            B: { SUBWAY: 0, PARK: 0, HOSPITAL: 0, SCHOOL: 0, STORE: 0 },
-            C: { SUBWAY: 0, PARK: 0, HOSPITAL: 0, SCHOOL: 0, STORE: 0 },
+            A: { SUBWAY: 0, PARK: 0, HOSPITAL: 0, PHARMACY: 0 },
+            B: { SUBWAY: 0, PARK: 0, HOSPITAL: 0, PHARMACY: 0 },
+            C: { SUBWAY: 0, PARK: 0, HOSPITAL: 0, PHARMACY: 0 },
         };
 
         (['A', 'B', 'C'] as const).forEach((id) => {
@@ -104,17 +104,12 @@ export default function AnalysisPanel({
                 C: calcScore(slotCounts.C.HOSPITAL, 6),
             },
             {
-                subject: '교육',
-                A: calcScore(slotCounts.A.SCHOOL, 8),
-                B: calcScore(slotCounts.B.SCHOOL, 8),
-                C: calcScore(slotCounts.C.SCHOOL, 8),
-            },
-            {
-                subject: '편의',
-                A: calcScore(slotCounts.A.STORE, 12),
-                B: calcScore(slotCounts.B.STORE, 12),
-                C: calcScore(slotCounts.C.STORE, 12),
-            },
+                // 새로 추가된 약국 카테고리 (기대 최대치 10으로 임의 설정)
+                subject: '약국',
+                A: calcScore(slotCounts.A.PHARMACY, 10),
+                B: calcScore(slotCounts.B.PHARMACY, 10),
+                C: calcScore(slotCounts.C.PHARMACY, 10),
+            }
         ];
     }, [slotCounts]);
 
@@ -130,14 +125,13 @@ export default function AnalysisPanel({
     }, [activeSlot, recentTransactions]);
 
     return (
-        /* 💡 모바일에서는 w-full 전체 폭, 데스크톱에서는 기존 레이아웃 유지 및 내부 flex 구조로 남은 높이 가득 채우기 */
         <div className={`w-full bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 p-3 sm:p-4 flex flex-col h-full overflow-hidden transition-colors ${
             mobileTab === 'analysis' ? 'flex flex-1 min-h-0' : 'hidden md:flex'
         }`}>
             {/* 패널 헤더 */}
             <div className="flex items-center justify-between pb-2.5 border-b border-slate-200 dark:border-slate-800 shrink-0">
                 <div className="flex items-center gap-2">
-                    <TrendingUp className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                    <TrendingUp className="w-4 h-4 text-blue-600 dark:text-blue-400"/>
                     <h2 className="font-bold text-sm sm:text-base">비교 분석 리포트</h2>
                 </div>
                 <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">단위: 억원 / 점</span>
@@ -177,7 +171,7 @@ export default function AnalysisPanel({
                             : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'
                     }`}
                 >
-                    <TrendingUp className="w-3.5 h-3.5" />
+                    <TrendingUp className="w-3.5 h-3.5"/>
                     실거래가 추이
                 </button>
                 <button
@@ -188,12 +182,12 @@ export default function AnalysisPanel({
                             : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'
                     }`}
                 >
-                    <Layers className="w-3.5 h-3.5" />
+                    <Layers className="w-3.5 h-3.5"/>
                     입지 다각도 비교
                 </button>
             </div>
 
-            {/* 상단 차트 영역 (고정 크기 유지) */}
+            {/* 상단 차트 영역 */}
             <div className="shrink-0 mb-3">
                 {selectedTab === 'trend' && (
                     <div className="p-3 h-60 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200 dark:border-slate-800">
@@ -277,11 +271,11 @@ export default function AnalysisPanel({
                 )}
             </div>
 
-            {/* 💡 하단 실거래가 주요 내역 섹션: flex-1과 overflow-y-auto를 통해 남은 수직 공간을 채우고 스크롤 처리 */}
+            {/* 하단 실거래가 주요 내역 섹션 */}
             <div className="flex-1 min-h-0 flex flex-col pt-2 border-t border-slate-200 dark:border-slate-800">
                 <div className="flex items-center justify-between mb-2 shrink-0">
                     <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                        <Home className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                        <Home className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400"/>
                         <span>최근 실거래가 주요 내역 ({activeSlot.name})</span>
                     </h4>
                     <span className="text-[10px] text-slate-400">최신 거래순</span>
@@ -289,7 +283,6 @@ export default function AnalysisPanel({
                 <div className="flex-1 min-h-0 overflow-y-auto space-y-1.5 pr-1">
                     {priceTrendData && priceTrendData.length > 0 ? (
                         priceTrendData.slice(-5).reverse().map((item, index) => {
-                            // 현재 더미 데이터에서 A, B, C 슬롯 중 현재 활성화된 슬롯의 값을 가져옵니다.
                             const priceVal = (item as any)[activeSlot.name] ?? 0;
                             const dateVal = (item as any).year ?? '최근';
 
@@ -307,7 +300,6 @@ export default function AnalysisPanel({
                                         </div>
                                     </div>
                                     <div className="text-right">
-                                        {/* 더미 데이터(15.0 등)가 이미 '억' 단위이므로 바로 '억원'을 붙여줍니다 */}
                                         <div className="font-bold text-blue-600 dark:text-blue-400">
                                             {Number(priceVal).toFixed(1)}억원
                                         </div>
