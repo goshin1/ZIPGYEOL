@@ -93,7 +93,8 @@ export default function VWorldMap({ activeSlot, slots, onSelectSlot, onFacilitie
             });
 
             if (error) {
-                console.error('Supabase RPC Error:', error);
+                // 오류
+                // console.error('Supabase RPC Error:', error);
                 return;
             }
 
