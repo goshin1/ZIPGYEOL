@@ -1,4 +1,6 @@
 @import 'tailwindcss';
+/* Toast 팝업 효과를 위한 css */
+@import 'tw-animate-css';
 
 /* 다크모드: OS 설정이 아니라 <html class="dark"> 기준으로 dark: 유틸리티 적용 */
 @custom-variant dark (&:where(.dark, .dark *));
