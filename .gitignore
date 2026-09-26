@@ -46,3 +46,6 @@ next-env.d.ts
 
 # IDE
 .idea/
+
+# 원본 데이터 (scripts/build-regions.mjs 입력, 용량 때문에 제외)
+/data/

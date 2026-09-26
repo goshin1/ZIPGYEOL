@@ -15,14 +15,15 @@ cp .env.example .env.local   # 값 채우기
 npm run dev                   # http://localhost:3000
 ```
 
-| 스크립트            | 설명                        |
-| ------------------- | --------------------------- |
-| `npm run dev`       | 개발 서버                   |
-| `npm run build`     | 프로덕션 빌드               |
-| `npm run lint`      | ESLint                      |
-| `npm run typecheck` | TypeScript 타입 검사        |
-| `npm test`          | 단위 테스트 (Vitest)        |
-| `npm run format`    | Prettier로 코드 스타일 정리 |
+| 스크립트                | 설명                                       |
+| ----------------------- | ------------------------------------------ |
+| `npm run dev`           | 개발 서버                                  |
+| `npm run build`         | 프로덕션 빌드                              |
+| `npm run lint`          | ESLint                                     |
+| `npm run typecheck`     | TypeScript 타입 검사                       |
+| `npm test`              | 단위 테스트 (Vitest)                       |
+| `npm run format`        | Prettier로 코드 스타일 정리                |
+| `npm run build:regions` | 행정구역 경계 원본 → `public/geojson` 생성 |
 
 ## 폴더 구조
 
@@ -84,6 +85,21 @@ page.tsx (slots, activeSlotId 상태)
 4. `features/map/VWorldMap.tsx` — OpenLayers 지도 생명주기 (생성 / 이동 / 마커 갱신 effect 3개)
 5. `features/region-detail/`, `features/compare/` — 데이터가 어떻게 그려지는지
 6. `lib/scores.ts`, `lib/address.ts` + 테스트 — 계산 규칙
+
+## 행정구역 경계 (`public/geojson`)
+
+`scripts/build-regions.mjs`가 원본 경계(`data/geojson-raw/korea-{sido,sgg,hjd}.geojson`, git 제외)로 만드는 생성 파일입니다. 직접 수정하지 말고 원본을 바꾼 뒤 `npm run build:regions`를 다시 실행하세요.
+
+| 파일                     | 내용                                                                          |
+| ------------------------ | ----------------------------------------------------------------------------- |
+| `regions.json`           | 선택 목록 `{ level, code, name, fullName, parent, center }`                   |
+| `sido.geojson`           | 시도 경계 (`code`: 2자리)                                                     |
+| `sgg.geojson`            | 시군구 경계 (`code`: 5자리, `parent`: 시도 코드)                              |
+| `hjd/<시도코드>.geojson` | 행정동 경계, 10%로 단순화 (`code`: 10자리 행정동 코드, `parent`: 시군구 코드) |
+
+- 코드는 앞자리가 상위 지역 코드와 같습니다 (`11` → `11110` → `1111053000`). 생성할 때 이 규칙을 검사합니다.
+- 행정동 코드는 인구 테이블의 `region_code`와 같은 10자리 형식입니다. 실거래가는 법정동 기준이라 행정동과 바로 연결되지 않습니다.
+- `center`는 경계 안쪽에 있는 대표점입니다 (오목한 경계에서도 밖으로 나가지 않음).
 
 ## Supabase
 
