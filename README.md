@@ -88,18 +88,20 @@ page.tsx (slots, activeSlotId 상태)
 
 ## 행정구역 경계 (`public/geojson`)
 
-`scripts/build-regions.mjs`가 원본 경계(`data/geojson-raw/korea-{sido,sgg,hjd}.geojson`, git 제외)로 만드는 생성 파일입니다. 직접 수정하지 말고 원본을 바꾼 뒤 `npm run build:regions`를 다시 실행하세요.
+`scripts/build-regions.mjs`가 원본(`data/geojson-raw/`, git 제외)으로 만드는 생성 파일입니다. 직접 수정하지 말고 원본을 바꾼 뒤 `npm run build:regions`를 다시 실행하세요.
 
-| 파일                     | 내용                                                                          |
-| ------------------------ | ----------------------------------------------------------------------------- |
-| `regions.json`           | 선택 목록 `{ level, code, name, fullName, parent, center }`                   |
-| `sido.geojson`           | 시도 경계 (`code`: 2자리)                                                     |
-| `sgg.geojson`            | 시군구 경계 (`code`: 5자리, `parent`: 시도 코드)                              |
-| `hjd/<시도코드>.geojson` | 행정동 경계, 10%로 단순화 (`code`: 10자리 행정동 코드, `parent`: 시군구 코드) |
+- 원본: `korea-{sido,sgg,hjd}.geojson` (경계), `korea-region.json` (검색 목록 `{ sido, sigungu, emd, lat, lng }`)
 
-- 코드는 앞자리가 상위 지역 코드와 같습니다 (`11` → `11110` → `1111053000`). 생성할 때 이 규칙을 검사합니다.
+| 파일                     | 내용                                                                  |
+| ------------------------ | --------------------------------------------------------------------- |
+| `regions.json`           | 검색 목록 `{ sido, sigungu, emd, lat, lng, code }` (없는 단위는 `''`) |
+| `sido.geojson`           | 시도 경계 (`code`: 2자리)                                             |
+| `sgg.geojson`            | 시군구 경계 (`code`: 5자리)                                           |
+| `hjd/<시도코드>.geojson` | 행정동 경계, 10%로 단순화 (`code`: 10자리 행정동 코드)                |
+
+- 경계 feature의 `key`(`'시도|시군구|읍면동'`)로 검색 목록과 연결됩니다. 생성할 때 두 쪽이 1:1로 맞는지 검사합니다.
+- 이름은 원본 표기 그대로입니다 (`수원시장안구`). DB는 `수원시 장안구`처럼 띄어 쓰므로 조회할 때 변환이 필요합니다.
 - 행정동 코드는 인구 테이블의 `region_code`와 같은 10자리 형식입니다. 실거래가는 법정동 기준이라 행정동과 바로 연결되지 않습니다.
-- `center`는 경계 안쪽에 있는 대표점입니다 (오목한 경계에서도 밖으로 나가지 않음).
 
 ## Supabase
 

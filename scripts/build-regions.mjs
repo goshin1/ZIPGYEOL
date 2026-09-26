@@ -1,10 +1,12 @@
 /**
- * 행정구역 경계 원본(data/geojson-raw) → 화면용 파일(public/geojson) 생성
+ * 행정구역 원본(data/geojson-raw) → 화면용 파일(public/geojson) 생성
  *
- *   public/geojson/regions.json      선택 목록 (코드, 이름, 상위 코드, 중심 좌표)
- *   public/geojson/sido.geojson      시도 경계
- *   public/geojson/sgg.geojson       시군구 경계
+ *   public/geojson/regions.json       검색 목록 (korea-region.json + 행정구역 코드)
+ *   public/geojson/sido.geojson       시도 경계
+ *   public/geojson/sgg.geojson        시군구 경계
  *   public/geojson/hjd/<시도>.geojson 단순화한 행정동 경계 (시도별 분리)
+ *
+ * 검색 목록과 경계는 key('시도|시군구|읍면동', 없는 단위는 빈 문자열)로 연결된다.
  *
  * 실행: npm run build:regions
  */
@@ -15,17 +17,14 @@ import mapshaper from 'mapshaper';
 const RAW_DIR = 'data/geojson-raw';
 const OUT_DIR = 'public/geojson';
 const RAW_FILES = { sido: 'korea-sido.geojson', sgg: 'korea-sgg.geojson', hjd: 'korea-hjd.geojson' };
+const REGION_LIST_FILE = 'korea-region.json';
 
 /** 행정동 경계 단순화 비율 (남길 꼭짓점 비율) */
 const HJD_SIMPLIFY = '10%';
 /** 좌표 소수점 자리수 (0.00001도 ≈ 1m) */
 const PRECISION = 0.00001;
 
-const round = (value) => Math.round(value / PRECISION) * PRECISION;
-const roundCoord = ([lng, lat]) => [Number(round(lng).toFixed(5)), Number(round(lat).toFixed(5))];
-
-/** '수원시장안구' → '수원시 장안구' (DB 표기와 맞춤) */
-const formatSggName = (name) => name.replace(/^(\S+시)(\S+구)$/, '$1 $2');
+const toKey = (sido, sigungu = '', emd = '') => `${sido}|${sigungu}|${emd}`;
 
 /** mapshaper 명령을 메모리에서 실행하고 출력 GeoJSON 하나를 객체로 돌려준다 */
 async function runMapshaper(input, commands, outputOptions = '') {
@@ -35,69 +34,43 @@ async function runMapshaper(input, commands, outputOptions = '') {
     return JSON.parse(output['output.geojson']);
 }
 
-/** 폴리곤 안쪽에 있는 대표점 (오목한 경계에서도 경계 밖으로 나가지 않음) */
-async function interiorPoints(input) {
-    const points = await runMapshaper(input, '-points inner');
-    return points.features.map((feature) => roundCoord(feature.geometry.coordinates));
-}
+/** 원본 속성 → { key, code } (원본 이름을 그대로 써야 korea-region.json과 맞는다) */
+const PROPERTIES = {
+    sido: (p) => ({ key: toKey(p.sidonm), code: p.sido }),
+    sgg: (p) => ({ key: toKey(p.sidonm, p.sggnm), code: p.sgg }),
+    hjd: (p) => {
+        const prefix = `${p.sidonm} ${p.sggnm} `;
+        if (!p.adm_nm.startsWith(prefix)) throw new Error(`행정동 이름 형식 불일치: ${p.adm_nm}`);
+        return { key: toKey(p.sidonm, p.sggnm, p.adm_nm.slice(prefix.length)), code: p.adm_cd2, sido: p.sido };
+    },
+};
 
 async function main() {
     const raw = {};
     for (const [level, file] of Object.entries(RAW_FILES)) {
-        raw[level] = await readFile(path.join(RAW_DIR, file), 'utf8');
+        const geojson = JSON.parse(await readFile(path.join(RAW_DIR, file), 'utf8'));
+        // 속성은 key, code만 남긴다 (mapshaper -each 식보다 JS로 바꾸는 편이 읽기 쉬움)
+        for (const feature of geojson.features) feature.properties = PROPERTIES[level](feature.properties);
+        raw[level] = geojson;
     }
-    const features = Object.fromEntries(Object.entries(raw).map(([level, text]) => [level, JSON.parse(text).features]));
+    const regionList = JSON.parse(await readFile(path.join(RAW_DIR, REGION_LIST_FILE), 'utf8'));
 
-    // 1. 선택 목록 (대표점은 단순화 전 원본 경계로 계산)
-    const centers = {};
-    for (const level of Object.keys(raw)) centers[level] = await interiorPoints(raw[level]);
+    // 1. 검색 목록: 경계와 1:1로 맞는지 검사하고 코드를 붙인다
+    const codeByKey = new Map(
+        Object.values(raw).flatMap(({ features }) => features.map(({ properties: p }) => [p.key, p.code])),
+    );
+    const regions = regionList.map((region) => ({
+        ...region,
+        code: codeByKey.get(toKey(region.sido, region.sigungu, region.emd)),
+    }));
+    validate(regions, codeByKey);
 
-    const regions = [
-        ...features.sido.map(({ properties: p }, i) => ({
-            level: 'sido',
-            code: p.sido,
-            name: p.sidonm,
-            fullName: p.sidonm,
-            parent: null,
-            center: centers.sido[i],
-        })),
-        ...features.sgg.map(({ properties: p }, i) => ({
-            level: 'sgg',
-            code: p.sgg,
-            name: formatSggName(p.sggnm),
-            fullName: `${p.sidonm} ${formatSggName(p.sggnm)}`,
-            parent: p.sgg.slice(0, 2),
-            center: centers.sgg[i],
-        })),
-        ...features.hjd.map(({ properties: p }, i) => ({
-            level: 'hjd',
-            code: p.adm_cd2,
-            name: p.adm_nm.split(' ').at(-1),
-            fullName: `${p.sidonm} ${formatSggName(p.sggnm)} ${p.adm_nm.split(' ').at(-1)}`,
-            parent: p.sgg,
-            center: centers.hjd[i],
-        })),
-    ];
-    validate(regions);
-
-    // 2. 경계 파일: 속성은 코드와 이름만 남긴다
-    const sido = await runMapshaper(
-        raw.sido,
-        `-each "code=sido, name=sidonm" -filter-fields code,name`,
-        `precision=${PRECISION}`,
-    );
-    const sgg = await runMapshaper(
-        raw.sgg,
-        `-each "code=sgg, name=sggnm, parent=sgg.slice(0,2)" -filter-fields code,name,parent`,
-        `precision=${PRECISION}`,
-    );
-    const hjd = await runMapshaper(
-        raw.hjd,
-        `-simplify ${HJD_SIMPLIFY} keep-shapes -each "code=adm_cd2, name=adm_nm.split(' ').pop(), parent=sgg, sido=sido" ` +
-            `-filter-fields code,name,parent,sido`,
-        `precision=${PRECISION}`,
-    );
-    for (const feature of sgg.features) feature.properties.name = formatSggName(feature.properties.name);
+    // 2. 경계 파일 (시도/시군구 원본은 이미 단순화되어 있어 좌표 자리수만 맞춘다)
+    const [sido, sgg, hjd] = await Promise.all([
+        runMapshaper(JSON.stringify(raw.sido), '', `precision=${PRECISION}`),
+        runMapshaper(JSON.stringify(raw.sgg), '', `precision=${PRECISION}`),
+        runMapshaper(JSON.stringify(raw.hjd), `-simplify ${HJD_SIMPLIFY} keep-shapes`, `precision=${PRECISION}`),
+    ]);
 
     // 3. 쓰기
     await rm(OUT_DIR, { recursive: true, force: true });
@@ -120,30 +93,31 @@ async function main() {
         await write(`hjd/${code}.geojson`, { type: 'FeatureCollection', features: list });
     }
 
-    const counts = Object.groupBy(regions, (region) => region.level);
-    console.log(`regions: 시도 ${counts.sido.length}, 시군구 ${counts.sgg.length}, 행정동 ${counts.hjd.length}`);
+    const count = (level) => regions.filter(level).length;
+    console.log(
+        `regions: 시도 ${count((r) => !r.sigungu)}, 시군구 ${count((r) => r.sigungu && !r.emd)}, 읍면동 ${count((r) => r.emd)}`,
+    );
     console.table(written.map(({ file, size }) => ({ file, KB: Math.round(size / 1024) })));
     const total = written.filter(({ file }) => file.startsWith('hjd/')).reduce((sum, { size }) => sum + size, 0);
-    console.log(
-        `행정동 합계 ${(total / 1024 / 1024).toFixed(2)}MB (원본 ${(raw.hjd.length / 1024 / 1024).toFixed(2)}MB)`,
-    );
+    console.log(`행정동 합계 ${(total / 1024 / 1024).toFixed(2)}MB`);
 }
 
-/** 코드 체계가 어긋나면 화면에서 선택이 끊기므로 생성 단계에서 막는다 */
-function validate(regions) {
-    const codes = new Set();
+/** 검색 목록과 경계가 어긋나면 선택한 지역의 경계를 못 그리므로 생성 단계에서 막는다 */
+function validate(regions, codeByKey) {
+    const errors = [];
+    const keys = new Set();
     for (const region of regions) {
-        if (codes.has(region.code)) throw new Error(`중복 코드: ${region.code} ${region.fullName}`);
-        codes.add(region.code);
+        const key = toKey(region.sido, region.sigungu, region.emd);
+        if (region.emd && !region.sigungu) errors.push(`시군구 없이 읍면동만 있음: ${key}`);
+        if (keys.has(key)) errors.push(`중복: ${key}`);
+        keys.add(key);
+        if (!region.code) errors.push(`경계 없음: ${key}`);
+        if (!Number.isFinite(region.lat) || !Number.isFinite(region.lng)) errors.push(`좌표 오류: ${key}`);
     }
-    for (const region of regions) {
-        if (region.parent && !codes.has(region.parent)) {
-            throw new Error(`상위 지역 없음: ${region.fullName} (parent ${region.parent})`);
-        }
-        if (region.parent && !region.code.startsWith(region.parent)) {
-            throw new Error(`코드 접두어 불일치: ${region.fullName} (${region.code} / ${region.parent})`);
-        }
+    for (const key of codeByKey.keys()) {
+        if (!keys.has(key)) errors.push(`검색 목록에 없는 경계: ${key}`);
     }
+    if (errors.length > 0) throw new Error(`검증 실패 ${errors.length}건\n${errors.slice(0, 20).join('\n')}`);
 }
 
 main().catch((error) => {
