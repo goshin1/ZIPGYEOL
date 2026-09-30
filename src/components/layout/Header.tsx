@@ -1,16 +1,17 @@
 import { Moon, Sun } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import type { GeocodeResult } from '@/lib/api/geocoding';
-import type { SlotId } from '@/types';
+import type { RegionEntry, SlotId } from '@/types';
 import SearchBar from './SearchBar';
 
 interface HeaderProps {
     activeSlotId: SlotId;
-    onFound: (result: GeocodeResult) => void;
+    onFound: (result: GeocodeResult) => void | Promise<void>;
+    onRegionSelect: (entry: RegionEntry) => void;
     onMessage: (message: string) => void;
 }
 
-export default function Header({ activeSlotId, onFound, onMessage }: HeaderProps) {
+export default function Header({ activeSlotId, onFound, onRegionSelect, onMessage }: HeaderProps) {
     const { isDark, toggleTheme } = useTheme();
 
     return (
@@ -19,7 +20,12 @@ export default function Header({ activeSlotId, onFound, onMessage }: HeaderProps
                 ZIPGyeol
             </span>
 
-            <SearchBar activeSlotId={activeSlotId} onFound={onFound} onMessage={onMessage} />
+            <SearchBar
+                activeSlotId={activeSlotId}
+                onFound={onFound}
+                onRegionSelect={onRegionSelect}
+                onMessage={onMessage}
+            />
 
             <button
                 type="button"

@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { parseRegion } from '@/lib/address';
+import { createRegionSearch, regionName, regionParentLabel, toSlotRegion } from '@/lib/regionSearch';
 import { toYearlyAverage } from '@/lib/realEstate';
+import { boundaryFileOf, findBoundaryAt, geometryContains, parseBoundaryKey } from '@/lib/regionBoundary';
 import { calculateScores, countByType, toScore } from '@/lib/scores';
-import type { Facility } from '@/types';
+import type { BoundaryFeature, BoundaryGeometry, Facility, RegionEntry } from '@/types';
 
 const facility = (facility_type: string): Facility => ({
     id: 1,
@@ -72,5 +74,138 @@ describe('toYearlyAverage', () => {
             { year: '2022', avgPrice: 175 },
             { year: '2023', avgPrice: 300 },
         ]);
+    });
+});
+
+describe('regionSearch', () => {
+    const entry = (sido: string, sigungu = '', emd = ''): RegionEntry => ({
+        sido,
+        sigungu,
+        emd,
+        lat: 0,
+        lng: 0,
+        code: [sido, sigungu, emd].join('|'),
+    });
+    const REGIONS = [
+        entry('서울특별시'),
+        entry('경기도'),
+        entry('경상북도'),
+        entry('서울특별시', '강남구'),
+        entry('서울특별시', '동대문구'),
+        entry('경기도', '수원시장안구'),
+        entry('경상북도', '포항시남구'),
+        entry('서울특별시', '강남구', '역삼1동'),
+        entry('서울특별시', '강남구', '역삼2동'),
+        entry('서울특별시', '동대문구', '장안1동'),
+        entry('경기도', '수원시장안구', '파장동'),
+        entry('서울특별시', '중구', '중앙동'),
+        entry('경기도', '수원시장안구', '중앙동'),
+    ];
+    const search = createRegionSearch(REGIONS);
+    const names = (query: string) => search(query).map((r) => [r.sido, r.sigungu, r.emd].filter(Boolean).join(' '));
+
+    it('공백으로 나눈 토큰이 모두 들어 있는 지역을 찾는다', () => {
+        expect(names('수원 장안')).toEqual([
+            '경기도 수원시장안구',
+            '경기도 수원시장안구 파장동',
+            '경기도 수원시장안구 중앙동',
+        ]);
+        expect(names('서울 강남 역삼')).toEqual(['서울특별시 강남구 역삼1동', '서울특별시 강남구 역삼2동']);
+        expect(names('수원시 장안구')[0]).toBe('경기도 수원시장안구');
+    });
+
+    it('이름에 없는 시도 약칭도 찾는다', () => {
+        expect(names('경북 포항')).toEqual(['경상북도 포항시남구']);
+    });
+
+    it('자신의 이름이 맞는 지역을 먼저, 같으면 상위 단위를 먼저 보여준다', () => {
+        // '강남구'(접미어 제외 일치) → 강남구 소속 동(상위 이름으로만 일치)
+        expect(names('강남')).toEqual(['서울특별시 강남구', '서울특별시 강남구 역삼1동', '서울특별시 강남구 역삼2동']);
+        // 시군구 '수원시장안구'의 '장안구'와 동 '장안1동'이 둘 다 앞부분 일치 → 시군구 먼저
+        expect(names('장안').slice(0, 2)).toEqual(['경기도 수원시장안구', '서울특별시 동대문구 장안1동']);
+    });
+
+    it('같은 이름의 동은 모두 보여준다', () => {
+        expect(names('중앙동')).toHaveLength(2);
+    });
+
+    it('조합 중인 끝 자모는 떼고 찾는다', () => {
+        expect(names('역ㅅ')).toEqual(names('역'));
+        expect(search('ㅅ')).toEqual([]);
+    });
+
+    it('검색어가 비어 있거나 일치하는 지역이 없으면 빈 배열', () => {
+        expect(search('   ')).toEqual([]);
+        expect(search('테헤란로')).toEqual([]);
+    });
+
+    it('개수를 제한한다', () => {
+        expect(search('서울', 2)).toHaveLength(2);
+    });
+
+    it('읍면동을 골라도 DB 조회 지역은 상위 시군구(띄어쓰기 맞춤)', () => {
+        expect(toSlotRegion(entry('경기도', '수원시장안구', '파장동'))).toEqual({
+            name: '파장동',
+            region: '경기도 수원시 장안구',
+        });
+        expect(toSlotRegion(entry('서울특별시', '강남구'))).toEqual({ name: '강남구', region: '서울특별시 강남구' });
+        expect(toSlotRegion(entry('서울특별시'))).toEqual({ name: '서울특별시', region: '서울특별시' });
+    });
+
+    it('표시용 이름과 상위 경로', () => {
+        expect(regionName(entry('경기도', '수원시장안구'))).toBe('수원시 장안구');
+        expect(regionParentLabel(entry('경기도', '수원시장안구', '파장동'))).toBe('경기도 수원시 장안구');
+        expect(regionParentLabel(entry('경기도'))).toBe('');
+    });
+});
+
+describe('regionBoundary', () => {
+    // 경도 x, 위도 y 기준 정사각형 고리
+    const square = (x0: number, y0: number, size: number) => [
+        [x0, y0],
+        [x0 + size, y0],
+        [x0 + size, y0 + size],
+        [x0, y0 + size],
+        [x0, y0],
+    ];
+    // 가운데에 구멍이 뚫린 도넛 모양
+    const donut: BoundaryGeometry = { type: 'Polygon', coordinates: [square(0, 0, 10), square(4, 4, 2)] };
+    const islands: BoundaryGeometry = { type: 'MultiPolygon', coordinates: [[square(0, 0, 1)], [square(5, 5, 1)]] };
+
+    it('코드 길이로 경계 파일을 고른다', () => {
+        expect(boundaryFileOf('11')).toBe('sido.geojson');
+        expect(boundaryFileOf('11680')).toBe('sgg.geojson');
+        expect(boundaryFileOf('1168064000')).toBe('hjd/11.geojson');
+        expect(boundaryFileOf('')).toBeNull();
+        expect(boundaryFileOf('1168')).toBeNull();
+    });
+
+    it('경계 key를 이름으로 나눈다', () => {
+        expect(parseBoundaryKey('경기도|수원시장안구|')).toEqual({ sido: '경기도', sigungu: '수원시장안구', emd: '' });
+        expect(parseBoundaryKey('서울특별시||')).toEqual({ sido: '서울특별시', sigungu: '', emd: '' });
+    });
+
+    it('폴리곤 구멍 안의 점은 포함하지 않는다', () => {
+        expect(geometryContains(donut, 1, 1)).toBe(true);
+        expect(geometryContains(donut, 5, 5)).toBe(false);
+        expect(geometryContains(donut, 11, 5)).toBe(false);
+    });
+
+    it('멀티폴리곤은 조각 중 하나에만 있어도 포함', () => {
+        expect(geometryContains(islands, 5.5, 5.5)).toBe(true);
+        expect(geometryContains(islands, 3, 3)).toBe(false);
+    });
+
+    it('좌표가 들어 있는 경계를 찾고, 없으면 null', () => {
+        const feature = (code: string, geometry: BoundaryGeometry): BoundaryFeature => ({
+            type: 'Feature',
+            geometry,
+            properties: { key: code, code },
+        });
+        const features = [feature('A', donut), feature('B', islands)];
+        // findBoundaryAt(features, 위도, 경도)
+        expect(findBoundaryAt(features, 1, 9)?.properties.code).toBe('A');
+        expect(findBoundaryAt(features, 5.5, 5.5)?.properties.code).toBe('B');
+        expect(findBoundaryAt(features, 20, 20)).toBeNull();
     });
 });

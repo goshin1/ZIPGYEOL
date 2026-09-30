@@ -15,7 +15,45 @@ export interface RegionSlot {
     region: string;
     lat: number;
     lng: number;
+    /** 지도에 그릴 경계의 행정구역 코드 (RegionEntry.code와 같은 형식, 경계를 못 찾으면 빈 문자열) */
+    code: string;
     color: string;
+}
+
+/** 행정구역 단위 */
+export type RegionLevel = 'sido' | 'sgg' | 'emd';
+
+/** 행정구역 이름 (없는 단위는 빈 문자열) */
+export interface RegionNames {
+    sido: string;
+    /** 원본 표기 그대로 (예: '수원시장안구') */
+    sigungu: string;
+    emd: string;
+}
+
+/** 행정구역 검색 목록 한 건 (public/geojson/regions.json) */
+export interface RegionEntry extends RegionNames {
+    lat: number;
+    lng: number;
+    /** 행정구역 코드 (시도 2자리 / 시군구 5자리 / 읍면동 10자리) */
+    code: string;
+}
+
+/** 경계 좌표 ([경도, 위도], EPSG:4326) */
+export type BoundaryGeometry =
+    { type: 'Polygon'; coordinates: number[][][] } | { type: 'MultiPolygon'; coordinates: number[][][][] };
+
+/** 행정구역 경계 한 건 (public/geojson/*.geojson의 feature) */
+export interface BoundaryFeature {
+    type: 'Feature';
+    geometry: BoundaryGeometry;
+    /** key: '시도|시군구|읍면동' (검색 목록과 연결), code: 행정구역 코드 */
+    properties: { key: string; code: string };
+}
+
+export interface BoundaryCollection {
+    type: 'FeatureCollection';
+    features: BoundaryFeature[];
 }
 
 /** 주변 시설 (get_nearby_facilities RPC 결과를 정규화한 형태) */
