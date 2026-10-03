@@ -3,7 +3,7 @@ import { parseRegion } from '@/lib/address';
 import { createRegionSearch, regionName, regionParentLabel, toSlotRegion } from '@/lib/regionSearch';
 import { toYearlyAverage } from '@/lib/realEstate';
 import { boundaryFileOf, findBoundaryAt, geometryContains, parseBoundaryKey } from '@/lib/regionBoundary';
-import { calculateScores, countByType, toScore } from '@/lib/scores';
+import { calculateScores, calculateWeightedTotal, countByType, sanitizeWeights, toScore } from '@/lib/scores';
 import type { BoundaryFeature, BoundaryGeometry, Facility, RegionEntry } from '@/types';
 
 const facility = (facility_type: string): Facility => ({
@@ -59,6 +59,24 @@ describe('scores', () => {
             HOSPITAL: 100,
             PHARMACY: 0,
             SUBWAY: 20,
+        });
+    });
+
+    it('가중 평균으로 종합 점수를 계산한다', () => {
+        const scores = { PARK: 50, HOSPITAL: 100, PHARMACY: 0, SUBWAY: 20 };
+        expect(calculateWeightedTotal(scores, { PARK: 1, HOSPITAL: 1, PHARMACY: 1, SUBWAY: 1 })).toBe(43);
+        // 교통만 보면 교통 점수가 곧 종합 점수
+        expect(calculateWeightedTotal(scores, { PARK: 0, HOSPITAL: 0, PHARMACY: 0, SUBWAY: 5 })).toBe(20);
+        expect(calculateWeightedTotal(scores, { PARK: 0, HOSPITAL: 0, PHARMACY: 0, SUBWAY: 0 })).toBe(0);
+    });
+
+    it('저장된 가중치를 정리한다', () => {
+        expect(sanitizeWeights(null)).toEqual({ PARK: 1, HOSPITAL: 1, PHARMACY: 1, SUBWAY: 1 });
+        expect(sanitizeWeights({ PARK: 9, HOSPITAL: -2, PHARMACY: 2.6, SUBWAY: 'x' })).toEqual({
+            PARK: 5,
+            HOSPITAL: 0,
+            PHARMACY: 3,
+            SUBWAY: 1,
         });
     });
 });
