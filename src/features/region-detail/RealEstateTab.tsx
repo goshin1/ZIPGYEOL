@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { CHART_PRIMARY, TOOLTIP_STYLE } from '@/components/charts/chartTheme';
+import { AXIS_TICK, CHART_PRIMARY, TOOLTIP_STYLE } from '@/components/charts/chartTheme';
 import EmptyState from '@/components/ui/EmptyState';
 import SegmentedTabs, { type TabItem } from '@/components/ui/SegmentedTabs';
 import { useRealEstateTrends } from '@/hooks/useRegionData';
@@ -27,19 +27,9 @@ export default function RealEstateTab({ slot }: { slot: RegionSlot }) {
         return (
             <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={trends} margin={{ top: 5, right: 20, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.2} />
-                    <XAxis
-                        dataKey="deal_month"
-                        tick={{ fontSize: 10 }}
-                        stroke="currentColor"
-                        className="text-slate-500"
-                    />
-                    <YAxis
-                        tick={{ fontSize: 10 }}
-                        tickFormatter={(val: number) => `${manwonToEok(val).toFixed(1)}억`}
-                        stroke="currentColor"
-                        className="text-slate-500"
-                    />
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-slate-200 dark:stroke-slate-700/60" />
+                    <XAxis dataKey="deal_month" tick={AXIS_TICK} />
+                    <YAxis tick={AXIS_TICK} tickFormatter={(val: number) => `${manwonToEok(val).toFixed(1)}억`} />
                     <Tooltip
                         formatter={(value) => [`${Math.round(Number(value)).toLocaleString()} 만원`, '평균 매매가']}
                         labelFormatter={(label) => `계약년월: ${label}`}

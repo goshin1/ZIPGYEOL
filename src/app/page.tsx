@@ -91,7 +91,7 @@ export default function Home() {
                         <VWorldMap
                             slots={slots}
                             activeSlot={activeSlot}
-                            facilities={slotFacilities[activeSlotId]}
+                            facilities={slotFacilities.data[activeSlotId]}
                             boundaries={slotBoundaries}
                             onSelectSlot={handleSelectSlot}
                         />
@@ -100,7 +100,8 @@ export default function Home() {
 
                     <RegionDetailSection
                         slot={activeSlot}
-                        facilities={slotFacilities[activeSlotId]}
+                        facilities={slotFacilities.data[activeSlotId]}
+                        facilitiesLoading={slotFacilities.loading[activeSlotId]}
                         mobileTab={mobileTab}
                     />
                 </div>

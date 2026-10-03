@@ -9,10 +9,11 @@ interface PriceTrendChartProps {
     slots: RegionSlot[];
     activeSlotId: SlotId;
     trends: SlotRecord<RealEstateTrend[]>;
+    loading: boolean;
 }
 
 /** 슬롯별 연 평균 매매가 추이 (억원) */
-export default function PriceTrendChart({ slots, activeSlotId, trends }: PriceTrendChartProps) {
+export default function PriceTrendChart({ slots, activeSlotId, trends, loading }: PriceTrendChartProps) {
     // [{ year: '2022', A: 20.1, B: 12.3, C: 15.0 }, ...] 형태로 변환 (키는 슬롯 id라 이름이 겹쳐도 안전)
     const chartData = useMemo(() => {
         const rows = new Map<string, Record<string, number | string>>();
@@ -26,6 +27,7 @@ export default function PriceTrendChart({ slots, activeSlotId, trends }: PriceTr
         return [...rows.values()].sort((a, b) => String(a.year).localeCompare(String(b.year)));
     }, [slots, trends]);
 
+    if (loading) return <EmptyState message="실거래가 데이터를 불러오는 중..." />;
     if (chartData.length === 0) return <EmptyState message="표출할 실거래가 데이터가 없습니다." />;
 
     return (

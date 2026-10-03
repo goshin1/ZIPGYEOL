@@ -6,7 +6,15 @@ import type { RealEstateTrend, RegionSlot } from '@/types';
 const RECENT_MONTHS = 6;
 
 /** 활성 슬롯의 최근 월별 평균 실거래가 */
-export default function RecentDeals({ slot, trends }: { slot: RegionSlot; trends: RealEstateTrend[] }) {
+export default function RecentDeals({
+    slot,
+    trends,
+    loading,
+}: {
+    slot: RegionSlot;
+    trends: RealEstateTrend[];
+    loading: boolean;
+}) {
     const recent = trends.slice(-RECENT_MONTHS).reverse();
 
     return (
@@ -19,7 +27,9 @@ export default function RecentDeals({ slot, trends }: { slot: RegionSlot; trends
                 <span className="text-[10px] text-slate-400">최신순</span>
             </div>
             <div className="flex-1 min-h-0 overflow-y-auto space-y-1.5 pr-1">
-                {recent.length > 0 ? (
+                {loading ? (
+                    <EmptyState message="실거래가 데이터를 불러오는 중..." />
+                ) : recent.length > 0 ? (
                     recent.map((item) => (
                         <div
                             key={item.deal_month}

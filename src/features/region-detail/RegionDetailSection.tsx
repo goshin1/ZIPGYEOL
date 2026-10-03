@@ -21,11 +21,17 @@ const SUB_VIEW_TABS: TabItem<SubView>[] = [
 interface RegionDetailSectionProps {
     slot: RegionSlot;
     facilities: Facility[];
+    facilitiesLoading: boolean;
     mobileTab: MobileTab;
 }
 
 /** 지도 하단: 활성 슬롯의 인프라 / 인구 / 실거래가 상세 */
-export default function RegionDetailSection({ slot, facilities, mobileTab }: RegionDetailSectionProps) {
+export default function RegionDetailSection({
+    slot,
+    facilities,
+    facilitiesLoading,
+    mobileTab,
+}: RegionDetailSectionProps) {
     const [subView, setSubView] = useState<SubView>('facility');
     const facilityLabels = FACILITY_TYPE_KEYS.map((type) => FACILITY_TYPES[type].label).join('·');
 
@@ -52,7 +58,7 @@ export default function RegionDetailSection({ slot, facilities, mobileTab }: Reg
                 <SegmentedTabs items={SUB_VIEW_TABS} value={subView} onChange={setSubView} stretch className="w-full" />
             </div>
 
-            {subView === 'facility' && <FacilityTab facilities={facilities} />}
+            {subView === 'facility' && <FacilityTab facilities={facilities} loading={facilitiesLoading} />}
             {subView === 'population' && <PopulationTab slot={slot} />}
             {subView === 'realestate' && <RealEstateTab slot={slot} />}
         </div>

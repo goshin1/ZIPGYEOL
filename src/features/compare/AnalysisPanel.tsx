@@ -3,8 +3,10 @@
 import { useState } from 'react';
 import { Layers, TrendingUp } from 'lucide-react';
 import SegmentedTabs, { type TabItem } from '@/components/ui/SegmentedTabs';
-import { useSlotRealEstateTrends } from '@/hooks/useRegionData';
-import type { Facility, RegionSlot, SlotId, SlotRecord } from '@/types';
+import { SLOT_IDS } from '@/constants/slots';
+import WeightEditor from '@/features/weights/WeightEditor';
+import { type SlotData, useSlotRealEstateTrends } from '@/hooks/useRegionData';
+import type { Facility, RegionSlot, SlotId } from '@/types';
 import ComparisonRadar from './ComparisonRadar';
 import PriceTrendChart from './PriceTrendChart';
 import RecentDeals from './RecentDeals';
@@ -19,7 +21,7 @@ const CHART_TABS: TabItem<ChartView>[] = [
 interface AnalysisPanelProps {
     slots: RegionSlot[];
     activeSlot: RegionSlot;
-    slotFacilities: SlotRecord<Facility[]>;
+    slotFacilities: SlotData<Facility[]>;
     onSelectSlot: (id: SlotId) => void;
 }
 
@@ -77,23 +79,37 @@ export default function AnalysisPanel({ slots, activeSlot, slotFacilities, onSel
                     <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300">
                         {chartView === 'trend' ? '연 평균 매매가 추이 (전체 주택유형)' : '3개 슬롯 입지 조건 다중 비교'}
                     </h3>
-                    {chartView === 'radar' && <span className="text-[10px] text-slate-400">100점 만점 정규화</span>}
+                    {chartView === 'radar' && <WeightEditor />}
                 </div>
                 <div className="w-full flex-1 min-h-0">
                     {chartView === 'trend' ? (
-                        <PriceTrendChart slots={slots} activeSlotId={activeSlot.id} trends={slotTrends} />
+                        <PriceTrendChart
+                            slots={slots}
+                            activeSlotId={activeSlot.id}
+                            trends={slotTrends.data}
+                            loading={SLOT_IDS.some((id) => slotTrends.loading[id])}
+                        />
                     ) : (
-                        <ComparisonRadar slots={slots} activeSlotId={activeSlot.id} slotFacilities={slotFacilities} />
+                        <ComparisonRadar
+                            slots={slots}
+                            activeSlotId={activeSlot.id}
+                            slotFacilities={slotFacilities.data}
+                            loading={SLOT_IDS.some((id) => slotFacilities.loading[id])}
+                        />
                     )}
                 </div>
                 {chartView === 'radar' && (
                     <div className="text-[9px] text-slate-400 dark:text-slate-500 text-center pt-1 border-t border-slate-200 dark:border-slate-700/50">
-                        산출: 각 카테고리별 기대 최대치 대비 비율 환산
+                        축: 기대 최대치 대비 100점 환산 · 점수: 가중치(×N) 기준 가중 평균
                     </div>
                 )}
             </div>
 
-            <RecentDeals slot={activeSlot} trends={slotTrends[activeSlot.id]} />
+            <RecentDeals
+                slot={activeSlot}
+                trends={slotTrends.data[activeSlot.id]}
+                loading={slotTrends.loading[activeSlot.id]}
+            />
         </div>
     );
 }

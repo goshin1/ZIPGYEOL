@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { CHART_PRIMARY, TOOLTIP_STYLE } from '@/components/charts/chartTheme';
+import { AXIS_TICK, CHART_PRIMARY, TOOLTIP_STYLE } from '@/components/charts/chartTheme';
 import EmptyState from '@/components/ui/EmptyState';
 import { usePopulation } from '@/hooks/useRegionData';
 import type { PopulationRow, RegionSlot } from '@/types';
@@ -37,14 +37,9 @@ export default function PopulationTab({ slot }: { slot: RegionSlot }) {
         return (
             <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.2} />
-                    <XAxis dataKey="age" tick={{ fontSize: 10 }} stroke="currentColor" className="text-slate-500" />
-                    <YAxis
-                        tick={{ fontSize: 10 }}
-                        tickFormatter={(val: number) => `${(val / 10000).toFixed(0)}만`}
-                        stroke="currentColor"
-                        className="text-slate-500"
-                    />
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-slate-200 dark:stroke-slate-700/60" />
+                    <XAxis dataKey="age" tick={AXIS_TICK} />
+                    <YAxis tick={AXIS_TICK} tickFormatter={(val: number) => `${(val / 10000).toFixed(0)}만`} />
                     <Tooltip
                         formatter={(val) => [`${Number(val).toLocaleString()} 명`, '인구수']}
                         contentStyle={TOOLTIP_STYLE}
